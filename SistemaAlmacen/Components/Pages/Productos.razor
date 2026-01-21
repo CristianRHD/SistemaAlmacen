@@ -1,0 +1,874 @@
+﻿@page "/productos"
+@attribute [Authorize(Roles = "Admin,Gerente,Almacenista,Analista")]
+@rendermode InteractiveServer
+@using SistemaAlmacen.Models
+@using SistemaAlmacen.Services
+@using SistemaAlmacen.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@using CategoriaModel = SistemaAlmacen.Models.Categoria
+@inject ProductoService ProductoService
+@inject ApplicationDbContext Context
+@inject IJSRuntime JS
+
+<PageTitle>Productos - AlmaTrack</PageTitle>
+
+<div class="productos-container">
+
+    <div class="productos-header">
+        <h1 class="productos-titulo">📦 Gestión de Productos</h1>
+        <button @onclick="AbrirModalNuevo" class="btn-nuevo">
+            ➕ Nuevo Producto
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="cargando-container">
+            <p class="cargando-texto">⏳ Cargando productos...</p>
+        </div>
+    }
+    else if (!productos.Any())
+    {
+        <div class="vacio-container">
+            <div class="vacio-icono">📭</div>
+            <h3 class="vacio-titulo">No hay productos registrados</h3>
+            <p class="vacio-texto">Comienza agregando tu primer producto</p>
+            <button @onclick="AbrirModalNuevo" class="btn-agregar">
+                ➕ Agregar Producto
+            </button>
+        </div>
+    }
+    else
+    {
+        <!-- Búsqueda -->
+        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar por nombre o código..." class="input-busqueda" />
+
+        <!-- Tabla -->
+        <div class="tabla-container">
+            <div class="tabla-wrapper">
+                <table class="tabla-productos">
+                    <thead class="tabla-head">
+                        <tr>
+                            <th class="tabla-th">Código</th>
+                            <th class="tabla-th">Nombre</th>
+                            <th class="tabla-th">Categoría</th>
+                            <th class="tabla-th">Stock</th>
+                            <th class="tabla-th">P. Compra</th>
+                            <th class="tabla-th">P. Venta</th>
+                            <th class="tabla-th">Estado</th>
+                            <th class="tabla-th">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Filtrados)
+                        {
+                            <tr class="tabla-fila">
+                                <td class="tabla-td"><strong class="tabla-codigo">@p.Codigo</strong></td>
+                                <td class="tabla-td tabla-nombre">@p.Nombre</td>
+                                <td class="tabla-td">
+                                    <span class="badge-categoria">
+                                        @(p.Categoria?.Nombre ?? "Sin categoría")
+                                    </span>
+                                </td>
+                                <td class="tabla-td">
+                                    <span class="badge-stock" style="@GetColorStock(p)">
+                                        @p.Stock @p.Unidad
+                                    </span>
+                                </td>
+                                <td class="tabla-td tabla-nombre">@FormatearMoneda(p.PrecioCompra)</td>
+                                <td class="tabla-td tabla-nombre">@FormatearMoneda(p.PrecioVenta)</td>
+                                <td class="tabla-td">
+                                    @if (p.Activo)
+                                    {
+                                        <span class="badge-activo">
+                                            ✅ Activo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-inactivo">
+                                            ❌ Inactivo
+                                        </span>
+                                    }
+                                </td>
+                                <td class="tabla-td">
+                                    <div class="acciones-container">
+                                        <button @onclick="() => VerDetalle(p)" title="Ver detalles" class="btn-accion btn-ver">
+                                            👁️
+                                        </button>
+                                        <button @onclick="() => Editar(p)" title="Editar" class="btn-accion btn-editar">
+                                            ✏️
+                                        </button>
+                                        <button @onclick="() => Eliminar(p)" title="Eliminar" class="btn-accion btn-eliminar">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tabla-footer">
+                <p class="tabla-total"><strong>Total:</strong> @Filtrados.Count productos</p>
+            </div>
+        </div>
+    }
+</div>
+
+@* Modal Nuevo/Editar *@
+@if (mostrarModal)
+{
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-contenido" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar" : "➕ Nuevo") Producto</h3>
+                <button @onclick="CerrarModal" class="modal-cerrar">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Código *</label>
+                    <input type="text" @bind="form.Codigo" class="form-input" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" @bind="form.Nombre" class="form-input" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descripción</label>
+                    <textarea @bind="form.Descripcion" rows="3" class="form-textarea"></textarea>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Categoría *</label>
+                        <select @bind="form.CategoriaId" class="form-select">
+                            <option value="0">Seleccione...</option>
+                            @foreach (var c in categorias)
+                            {
+                                <option value="@c.Id">@c.Nombre</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Unidad</label>
+                        <input type="text" @bind="form.Unidad" class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Precio Compra </label>
+                        <input type="number" @bind="form.PrecioCompra" step="0.01" class="form-input" />
+                    </div>
+
+                    <div>
+                        <label class="form-label">Precio Venta </label>
+                        <input type="number" @bind="form.PrecioVenta" step="0.01" class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Stock </label>
+                        <input type="number" @bind="form.Stock" class="form-input" />
+                    </div>
+
+                    <div>
+                        <label class="form-label">Stock Mínimo </label>
+                        <input type="number" @bind="form.StockMinimo" class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-checkbox">
+                    <label class="checkbox-label">
+                        <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
+                        <span class="checkbox-text">Producto activo</span>
+                    </label>
+                </div>
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="error-mensaje">
+                        ❌ @error
+                    </div>
+                }
+
+                <div class="modal-footer">
+                    <button @onclick="CerrarModal" class="btn-cancelar">
+                        Cancelar
+                    </button>
+                    <button @onclick="Guardar" disabled="@guardando" class="btn-guardar" style="opacity: @(guardando ? "0.6" : "1")">
+                        @(guardando ? "⏳ Guardando..." : "💾 Guardar")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal Detalle *@
+@if (mostrarDetalle && detalle != null)
+{
+    <div class="modal-overlay" @onclick="CerrarDetalle">
+        <div class="modal-detalle" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3 class="modal-titulo-detalle">📋 Detalles del Producto</h3>
+                <button @onclick="CerrarDetalle" class="modal-cerrar">×</button>
+            </div>
+
+            <div class="detalle-body">
+                <div class="detalle-grid">
+                    <div class="detalle-item">
+                        <strong class="detalle-label">Código:</strong>
+                        <span class="detalle-valor">@detalle.Codigo</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong class="detalle-label">Nombre:</strong>
+                        <span class="detalle-valor">@detalle.Nombre</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(detalle.Descripcion))
+                    {
+                        <div class="detalle-item">
+                            <strong class="detalle-label">Descripción:</strong>
+                            <span class="detalle-valor">@detalle.Descripcion</span>
+                        </div>
+                    }
+                    <div class="detalle-item">
+                        <strong class="detalle-label">Categoría:</strong>
+                        <span class="detalle-valor">@(detalle.Categoria?.Nombre ?? "Sin categoría")</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong class="detalle-label">Stock:</strong>
+                        <span class="detalle-valor">@detalle.Stock @detalle.Unidad</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong class="detalle-label">P. Compra:</strong>
+                        <span class="detalle-valor">@FormatearMoneda(detalle.PrecioCompra)</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong class="detalle-label">P. Venta:</strong>
+                        <span class="detalle-valor">@FormatearMoneda(detalle.PrecioVenta)</span>
+                    </div>
+                </div>
+
+                <div class="detalle-footer">
+                    <button @onclick="CerrarDetalle" class="btn-cancelar">
+                        Cerrar
+                    </button>
+                    <button @onclick="() => { CerrarDetalle(); Editar(detalle); }" class="btn-editar-detalle">
+                        ✏️ Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<style>
+
+    .productos-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 20px;
+    }
+
+    /* Header */
+    .productos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #2196f3;
+    }
+
+    .productos-titulo {
+        margin: 0;
+        font-size: 2rem;
+        color: #2d3748;
+    }
+
+    .btn-nuevo {
+        background: linear-gradient(135deg, #2196f3, #1976d2);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    /* Estados de carga y vacío */
+    .cargando-container {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .cargando-texto {
+        font-size: 1.2rem;
+        color: #718096;
+    }
+
+    .vacio-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .vacio-icono {
+        font-size: 5rem;
+        margin-bottom: 20px;
+    }
+
+    .vacio-titulo {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #2d3748;
+    }
+
+    .vacio-texto {
+        color: #718096;
+        margin-bottom: 30px;
+    }
+
+    .btn-agregar {
+        background: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    /* Búsqueda */
+    .input-busqueda {
+        width: 100%;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    /* Tabla */
+    .tabla-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .tabla-wrapper {
+        overflow-x: auto;
+    }
+
+    .tabla-productos {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+    }
+
+    .tabla-head {
+        background: linear-gradient(135deg, #2196f3, #1976d2);
+        color: white;
+    }
+
+    .tabla-th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .tabla-fila {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+
+        .tabla-fila:hover {
+            background-color: #f8f9fa;
+        }
+
+    .tabla-td {
+        padding: 15px;
+    }
+
+    .tabla-codigo {
+        color: #2d3748;
+    }
+
+    .tabla-nombre {
+        color: #2d3748;
+    }
+
+    .badge-categoria {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #e3f2fd;
+        color: #1976d2;
+        display: inline-block;
+    }
+
+    .badge-stock {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge-activo {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #4caf50;
+        color: white;
+        display: inline-block;
+    }
+
+    .badge-inactivo {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #f44336;
+        color: white;
+        display: inline-block;
+    }
+
+    .acciones-container {
+        display: flex;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .btn-accion {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: white;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+    }
+
+    .btn-ver {
+        background: #2196f3;
+    }
+
+    .btn-editar {
+        background: #ff9800;
+    }
+
+    .btn-eliminar {
+        background: #f44336;
+    }
+
+    .tabla-footer {
+        padding: 15px;
+        background: white;
+        text-align: right;
+        border-radius: 0 0 12px 12px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .tabla-total {
+        color: #2d3748;
+        margin: 0;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-contenido {
+        background: white;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-detalle {
+        background: white;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 25px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modal-titulo {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2d3748;
+    }
+
+    .modal-titulo-detalle {
+        margin: 0;
+        color: #2d3748;
+    }
+
+    .modal-cerrar {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: #718096;
+        line-height: 1;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    /* Formulario */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        resize: vertical;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-checkbox {
+        margin-bottom: 20px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+
+    .checkbox-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .checkbox-text {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .error-mensaje {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef5350;
+    }
+
+    .modal-footer, .detalle-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .btn-cancelar {
+        background: #6c757d;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-guardar {
+        background: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-editar-detalle {
+        background: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    /* Detalle */
+    .detalle-body {
+        padding: 25px;
+    }
+
+    .detalle-grid {
+        display: grid;
+        gap: 15px;
+    }
+
+    .detalle-item {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .detalle-label {
+        color: #2196f3;
+    }
+
+    .detalle-valor {
+        color: #2d3748;
+    }
+
+    .detalle-footer {
+        margin-top: 20px;
+    }
+
+    /* Estados de interacción */
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: #2196f3 !important;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    }
+
+    button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active:not(:disabled) {
+        transform: translateY(0);
+    }
+</style>
+
+
+@code {
+    private List<Producto> productos = new();
+    private List<CategoriaModel> categorias = new();
+    private Producto form = new();
+    private Producto? detalle;
+    private string busqueda = "";
+    private string error = "";
+    private bool cargando = true;
+    private bool mostrarModal = false;
+    private bool mostrarDetalle = false;
+    private bool esEdicion = false;
+    private bool guardando = false;
+
+    // Configuración de moneda - Cambia aquí: "$", "RD$", "USD$", "€", "£", etc.
+    private string simboloMoneda = "RD$";
+
+    private List<Producto> Filtrados =>
+        string.IsNullOrWhiteSpace(busqueda)
+            ? productos
+            : productos.Where(p =>
+                p.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
+                p.Codigo.Contains(busqueda, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
+    {
+        cargando = true;
+        productos = await ProductoService.ObtenerTodosAsync();
+        categorias = await Context.Categorias
+            .Where(c => c.Activo)
+            .OrderBy(c => c.Nombre)
+            .ToListAsync();
+        cargando = false;
+    }
+
+    private void AbrirModalNuevo()
+    {
+        form = new Producto
+        {
+            Activo = true,
+            StockMinimo = 10,
+            Stock = 0,
+            Unidad = "Unidad"
+        };
+        esEdicion = false;
+        error = "";
+        mostrarModal = true;
+    }
+
+    private void Editar(Producto p)
+    {
+        form = new Producto
+        {
+            Id = p.Id,
+            Codigo = p.Codigo,
+            Nombre = p.Nombre,
+            Descripcion = p.Descripcion,
+            CategoriaId = p.CategoriaId,
+            PrecioCompra = p.PrecioCompra,
+            PrecioVenta = p.PrecioVenta,
+            Stock = p.Stock,
+            StockMinimo = p.StockMinimo,
+            Unidad = p.Unidad,
+            Activo = p.Activo
+        };
+        esEdicion = true;
+        error = "";
+        mostrarModal = true;
+    }
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(form.Codigo) || string.IsNullOrWhiteSpace(form.Nombre))
+        {
+            error = "Código y Nombre son requeridos";
+            return;
+        }
+
+        if (form.CategoriaId == 0)
+        {
+            error = "Seleccione una categoría";
+            return;
+        }
+
+        guardando = true;
+        error = "";
+
+        try
+        {
+            bool ok = esEdicion
+                ? await ProductoService.ActualizarAsync(form)
+                : await ProductoService.AgregarAsync(form);
+
+            if (ok)
+            {
+                await Cargar();
+                CerrarModal();
+                await JS.InvokeVoidAsync("alert", esEdicion ? "✅ Producto actualizado" : "✅ Producto agregado");
+            }
+            else
+            {
+                error = "El código ya existe";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private async Task Eliminar(Producto p)
+    {
+        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Eliminar '{p.Nombre}'?");
+        if (ok)
+        {
+            await ProductoService.EliminarAsync(p.Id);
+            await Cargar();
+            await JS.InvokeVoidAsync("alert", "✅ Eliminado");
+        }
+    }
+
+    private void VerDetalle(Producto p)
+    {
+        detalle = p;
+        mostrarDetalle = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+        form = new();
+        error = "";
+    }
+
+    private void CerrarDetalle()
+    {
+        mostrarDetalle = false;
+        detalle = null;
+    }
+
+    private string GetColorStock(Producto p)
+    {
+        if (p.Stock == 0) return "background: #f44336; color: white;";
+        if (p.Stock <= p.StockMinimo) return "background: #ff9800; color: white;";
+        return "background: #4caf50; color: white;";
+    }
+
+    private string FormatearMoneda(decimal valor)
+    {
+        return $"{simboloMoneda}{valor:N2}";
+    }
+}

@@ -1,0 +1,413 @@
+﻿@page "/usuarios"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using SistemaAlmacen.Services
+@using Microsoft.AspNetCore.Authorization
+@inject UsuarioService UsuarioService
+@inject IJSRuntime JS
+
+<PageTitle>Usuarios - AlmaTrack</PageTitle>
+
+<div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; border-bottom: 3px solid #667eea; gap: 20px; flex-wrap: wrap;">
+        <h1 style="margin: 0; font-size: 2rem; color: #2d3748; flex: 1; min-width: 250px;">👥 Gestión de Usuarios</h1>
+        <button @onclick="AbrirModalNuevo" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+            ➕ Nuevo Usuario
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div style="text-align: center; padding: 60px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <p style="font-size: 1.2rem; color: #718096;">⏳ Cargando usuarios...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Tarjetas de Roles Disponibles -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            @foreach (var rol in rolesDisponibles)
+            {
+                var cantidadUsuarios = usuarios.Count(u => u.Rol == rol.Nombre);
+                <div style="background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid @rol.Color; transition: transform 0.3s;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="font-size: 2.5rem;">@rol.Icono</div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: #2d3748; font-size: 1.3rem;">@rol.Nombre</h3>
+                            <p style="margin: 5px 0 0 0; color: #718096; font-size: 0.85rem;">@rol.Descripcion</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                        <span style="font-size: 2rem; font-weight: 700; color: @rol.Color;">@cantidadUsuarios</span>
+                        <span style="color: #718096; font-size: 0.9rem;">usuarios</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!usuarios.Any())
+        {
+            <div style="text-align: center; padding: 80px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="font-size: 5rem; margin-bottom: 20px;">👥</div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 10px; color: #2d3748;">No hay usuarios registrados</h3>
+            </div>
+        }
+        else
+        {
+            <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                        <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                            <tr>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Usuario</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Nombre Completo</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Email</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Rol</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Fecha Registro</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Estado</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in usuarios)
+                            {
+                                var rolInfo = rolesDisponibles.FirstOrDefault(r => r.Nombre == u.Rol);
+                                <tr style="border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;">
+                                    <td style="padding: 15px;"><strong style="color: #667eea;">@u.UserName</strong></td>
+                                    <td style="padding: 15px; color: #2d3748;">@(u.NombreCompleto ?? "N/A")</td>
+                                    <td style="padding: 15px; color: #2d3748;">@u.Email</td>
+                                    <td style="padding: 15px;">
+                                        @if (rolInfo != null)
+                                        {
+                                            <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: @rolInfo.Color; color: white; display: inline-flex; align-items: center; gap: 6px;">
+                                                <span>@rolInfo.Icono</span>
+                                                <span>@rolInfo.Nombre</span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #999; color: white;">
+                                                @u.Rol
+                                            </span>
+                                        }
+                                    </td>
+                                    <td style="padding: 15px; color: #718096;">@u.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                                    <td style="padding: 15px;">
+                                        @if (u.Activo)
+                                        {
+                                            <span style="padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #4caf50; color: white; display: inline-block;">
+                                                ✅ Activo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span style="padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #f44336; color: white; display: inline-block;">
+                                                🔒 Bloqueado
+                                            </span>
+                                        }
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        @if (u.UserName != "admin")
+                                        {
+                                            <div style="display: flex; gap: 8px; flex-wrap: nowrap;">
+                                                <button @onclick="() => Editar(u)" title="Editar" style="padding: 8px 12px; background: #ff9800; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1rem; transition: all 0.2s;">
+                                                    ✏️
+                                                </button>
+                                                <button @onclick="() => CambiarEstado(u)" title="@(u.Activo ? "Bloquear" : "Desbloquear")" style="padding: 8px 12px; background: @(u.Activo ? "#f44336" : "#4caf50"); border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1rem; transition: all 0.2s;">
+                                                    @(u.Activo ? "🔒" : "🔓")
+                                                </button>
+                                                <button @onclick="() => Eliminar(u)" title="Eliminar" style="padding: 8px 12px; background: #d32f2f; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1rem; transition: all 0.2s;">
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #999; font-size: 0.9rem;">Usuario principal</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div style="padding: 15px; background: white; text-align: right; border-radius: 0 0 12px 12px; border-top: 1px solid #f0f0f0;">
+                    <p style="color: #2d3748; margin: 0;"><strong>Total:</strong> @usuarios.Count usuarios</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@if (mostrarModal)
+{
+    <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px;" @onclick="CerrarModal">
+        <div style="background: white; border-radius: 15px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);" @onclick:stopPropagation>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #f0f0f0; position: sticky; top: 0; background: white; z-index: 10;">
+                <h3 style="margin: 0; font-size: 1.5rem; color: #2d3748;">@(esEdicion ? "✏️ Editar" : "➕ Nuevo") Usuario</h3>
+                <button @onclick="CerrarModal" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #718096; line-height: 1;">×</button>
+            </div>
+
+            <div style="padding: 25px;">
+                <!-- Selector de Rol -->
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #2d3748; font-size: 1.1rem;">Seleccionar Rol </label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        @foreach (var rol in rolesDisponibles.Where(r => r.Nombre != "Admin" || esEdicion))
+                        {
+                            var seleccionado = rolSeleccionado == rol.Nombre;
+                            <div @onclick="() => SeleccionarRol(rol.Nombre)"
+                                 style="padding: 15px; border: 2px solid @(seleccionado? rol.Color: "#e2e8f0"); border-radius: 12px; cursor: pointer; transition: all 0.3s; background: @(seleccionado? rol.Color + "15" : "white");">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <span style="font-size: 1.8rem;">@rol.Icono</span>
+                                    <strong style="color: @(seleccionado? rol.Color: "#2d3748"); font-size: 1rem;">@rol.Nombre</strong>
+                                </div>
+                                <p style="margin: 0; font-size: 0.8rem; color: #718096;">@rol.Descripcion</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Permisos del Rol Seleccionado -->
+                @if (!string.IsNullOrEmpty(rolSeleccionado))
+                {
+                    var rolInfo = rolesDisponibles.FirstOrDefault(r => r.Nombre == rolSeleccionado);
+                    if (rolInfo != null)
+                    {
+                        <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border: 2px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 15px 0; color: #1976d2; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.5rem;">@rolInfo.Icono</span>
+                                <span>Permisos de @rolInfo.Nombre</span>
+                            </h4>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                @foreach (var permiso in rolInfo.Permisos)
+                                {
+                                    <span style="padding: 6px 12px; background: white; border-radius: 20px; font-size: 0.85rem; color: #1976d2; font-weight: 600; border: 1px solid #2196f3;">
+                                        ✓ @permiso
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Nombre de Usuario </label>
+                    <input type="text" @bind="userName" style="width: 100%; padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;" />
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Nombre Completo </label>
+                    <input type="text" @bind="nombreCompleto" style="width: 100%; padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;" />
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Email </label>
+                    <input type="email" @bind="email" style="width: 100%; padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;" />
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">
+                        @(esEdicion ? "Nueva Contraseña (dejar vacío para no cambiar)" : "Contraseña ")
+                    </label>
+                    <input type="password" @bind="password" placeholder="Mínimo 6 caracteres" style="width: 100%; padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;" />
+                    <small style="color: #718096; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        La contraseña debe tener al menos 6 caracteres
+                    </small>
+                </div>
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div style="padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; background: #ffebee; color: #c62828; border: 1px solid #ef5350;">
+                        ❌ @error
+                    </div>
+                }
+
+                <div style="display: flex; justify-content: flex-end; gap: 15px; padding-top: 20px; border-top: 2px solid #f0f0f0; position: sticky; bottom: 0; background: white; z-index: 10;">
+                    <button @onclick="CerrarModal" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        Cancelar
+                    </button>
+                    <button @onclick="Guardar" disabled="@guardando" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; opacity: @(guardando ? "0.6" : "1"); transition: all 0.2s;">
+                        @(guardando ? "⏳ Guardando..." : "💾 Guardar")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UsuarioDto> usuarios = new();
+    private List<RolInfo> rolesDisponibles = new();
+    private string userId = "";
+    private string userName = "";
+    private string email = "";
+    private string nombreCompleto = "";
+    private string password = "";
+    private string rolSeleccionado = "";
+    private string error = "";
+    private bool cargando = true;
+    private bool mostrarModal = false;
+    private bool esEdicion = false;
+    private bool guardando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        rolesDisponibles = UsuarioService.ObtenerRolesDisponibles();
+        await Cargar();
+    }
+
+    private async Task Cargar()
+    {
+        cargando = true;
+        usuarios = await UsuarioService.ObtenerTodosAsync();
+        cargando = false;
+    }
+
+    private void AbrirModalNuevo()
+    {
+        userId = "";
+        userName = "";
+        email = "";
+        nombreCompleto = "";
+        password = "";
+        rolSeleccionado = "Empleado"; // Rol por defecto
+        esEdicion = false;
+        error = "";
+        mostrarModal = true;
+    }
+
+    private void Editar(UsuarioDto u)
+    {
+        userId = u.Id;
+        userName = u.UserName;
+        email = u.Email;
+        nombreCompleto = u.NombreCompleto;
+        password = "";
+        rolSeleccionado = u.Rol;
+        esEdicion = true;
+        error = "";
+        mostrarModal = true;
+    }
+
+    private void SeleccionarRol(string rol)
+    {
+        rolSeleccionado = rol;
+    }
+
+    private async Task Guardar()
+    {
+        error = "";
+
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(nombreCompleto))
+        {
+            error = "Todos los campos son requeridos";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(rolSeleccionado))
+        {
+            error = "Debe seleccionar un rol";
+            return;
+        }
+
+        if (!esEdicion && string.IsNullOrWhiteSpace(password))
+        {
+            error = "La contraseña es requerida para crear un usuario";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(password) && password.Length < 6)
+        {
+            error = "La contraseña debe tener al menos 6 caracteres";
+            return;
+        }
+
+        guardando = true;
+
+        try
+        {
+            (bool success, string message, string? newUserId) resultado;
+
+            if (esEdicion)
+            {
+                var (success, message) = await UsuarioService.ActualizarUsuarioAsync(userId, userName, email, nombreCompleto, string.IsNullOrWhiteSpace(password) ? null : password, rolSeleccionado);
+                resultado = (success, message, null);
+            }
+            else
+            {
+                resultado = await UsuarioService.CrearUsuarioAsync(userName, email, nombreCompleto, password, rolSeleccionado);
+            }
+
+            if (resultado.success)
+            {
+                await Cargar();
+                CerrarModal();
+                await JS.InvokeVoidAsync("alert", $"✅ {resultado.message}");
+            }
+            else
+            {
+                error = resultado.message;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private async Task CambiarEstado(UsuarioDto u)
+    {
+        var accion = u.Activo ? "bloquear" : "desbloquear";
+        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de {accion} al usuario '{u.UserName}'?");
+
+        if (ok)
+        {
+            var (success, message) = await UsuarioService.CambiarEstadoAsync(u.Id);
+            if (success)
+            {
+                await Cargar();
+                await JS.InvokeVoidAsync("alert", $"✅ {message}");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", $"❌ {message}");
+            }
+        }
+    }
+
+    private async Task Eliminar(UsuarioDto u)
+    {
+        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar al usuario '{u.UserName}'? Esta acción no se puede deshacer.");
+
+        if (ok)
+        {
+            var (success, message) = await UsuarioService.EliminarUsuarioAsync(u.Id);
+            if (success)
+            {
+                await Cargar();
+                await JS.InvokeVoidAsync("alert", $"✅ {message}");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", $"❌ {message}");
+            }
+        }
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+        userId = "";
+        userName = "";
+        email = "";
+        nombreCompleto = "";
+        password = "";
+        rolSeleccionado = "";
+        error = "";
+    }
+}

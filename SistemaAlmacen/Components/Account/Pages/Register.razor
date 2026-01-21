@@ -1,0 +1,490 @@
+﻿@page "/Account/Register"
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using SistemaAlmacen.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Registro - AlmaTrack</PageTitle>
+
+<div class="register-container">
+    <div class="register-card">
+        <!-- Logo y título -->
+        <div class="brand-header">
+            <div class="brand-icon">📦</div>
+            <h1>AlmaTrack</h1>
+            <p class="brand-subtitle">Únete y gestiona tu inventario</p>
+        </div>
+
+        <!-- Encabezado del formulario -->
+        <div class="form-header">
+            <h2>Crear cuenta nueva</h2>
+            <p>Completa el formulario para comenzar</p>
+        </div>
+
+        <StatusMessage Message="@Message" />
+
+        <!-- Formulario -->
+        <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="username" class="form-label">
+                    <span class="label-icon">👤</span>
+                    Nombre de Usuario
+                </label>
+                <InputText @bind-Value="Input.UserName"
+                           class="form-input"
+                           id="username"
+                           autocomplete="username"
+                           placeholder="Elige un nombre de usuario" />
+                <ValidationMessage For="() => Input.UserName" class="validation-error" />
+            </div>
+
+            <div class="form-group">
+                <label for="fullname" class="form-label">
+                    <span class="label-icon">✍️</span>
+                    Nombre Completo
+                </label>
+                <InputText @bind-Value="Input.NombreCompleto"
+                           class="form-input"
+                           id="fullname"
+                           placeholder="Tu nombre completo" />
+                <ValidationMessage For="() => Input.NombreCompleto" class="validation-error" />
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">
+                    <span class="label-icon">📧</span>
+                    Correo Electrónico
+                </label>
+                <InputText @bind-Value="Input.Email"
+                           class="form-input"
+                           id="email"
+                           type="email"
+                           autocomplete="email"
+                           placeholder="tu@email.com" />
+                <ValidationMessage For="() => Input.Email" class="validation-error" />
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <span class="label-icon">🔐</span>
+                    Contraseña
+                </label>
+                <InputText type="password"
+                           @bind-Value="Input.Password"
+                           class="form-input"
+                           id="password"
+                           autocomplete="new-password"
+                           placeholder="Mínimo 6 caracteres" />
+                <ValidationMessage For="() => Input.Password" class="validation-error" />
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password" class="form-label">
+                    <span class="label-icon">🔐</span>
+                    Confirmar Contraseña
+                </label>
+                <InputText type="password"
+                           @bind-Value="Input.ConfirmPassword"
+                           class="form-input"
+                           id="confirm-password"
+                           autocomplete="new-password"
+                           placeholder="Repite tu contraseña" />
+                <ValidationMessage For="() => Input.ConfirmPassword" class="validation-error" />
+            </div>
+
+            
+
+            <button type="submit" class="btn-register">
+                <span class="btn-text">Crear mi cuenta</span>
+                <span class="btn-icon">→</span>
+            </button>
+        </EditForm>
+
+        <!-- Login -->
+        <div class="login-section">
+            <p>¿Ya tienes una cuenta?</p>
+            <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class="login-link">
+                Inicia sesión aquí
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<IdentityError>? identityErrors;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    public async Task RegisterUser(EditContext editContext)
+    {
+        var user = new ApplicationUser
+        {
+            UserName = Input.UserName,
+            Email = Input.Email,
+            NombreCompleto = Input.NombreCompleto,
+            FechaRegistro = DateTime.Now
+        };
+
+        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        if (!result.Succeeded)
+        {
+            identityErrors = result.Errors;
+            return;
+        }
+
+        Logger.LogInformation("User created a new account with password.");
+
+        // Asignar rol por defecto (Empleado)
+        await UserManager.AddToRoleAsync(user, "Empleado");
+
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "El nombre de usuario es requerido")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "El usuario debe tener entre 3 y 50 caracteres")]
+        [Display(Name = "Usuario")]
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = "El nombre completo es requerido")]
+        [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
+        [Display(Name = "Nombre Completo")]
+        public string NombreCompleto { get; set; } = "";
+
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener mínimo 6 caracteres")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Contraseña")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Debes confirmar la contraseña")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirmar Contraseña")]
+        [Compare("Password", ErrorMessage = "Las contraseñas no coinciden")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .register-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        position: relative;
+        overflow: hidden;
+    }
+
+        /* Patrón de fondo animado */
+        .register-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient( 45deg, transparent, transparent 60px, rgba(255,255,255,0.03) 60px, rgba(255,255,255,0.03) 120px );
+            animation: movePattern 20s linear infinite;
+        }
+
+    @@keyframes movePattern {
+        0%
+
+    {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(60px, 60px);
+    }
+
+    }
+
+    /* Card del registro */
+    .register-card {
+        background: white;
+        padding: 45px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 550px;
+        position: relative;
+        z-index: 1;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
+    /* Marca y logo */
+    .brand-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .brand-icon {
+        font-size: 3.5rem;
+        margin-bottom: 12px;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @@keyframes float {
+        0%, 100%
+
+    {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    }
+
+    .brand-header h1 {
+        font-size: 2.2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .brand-subtitle {
+        color: #718096;
+        font-size: 0.9rem;
+    }
+
+    /* Encabezado del formulario */
+    .form-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+        .form-header h2 {
+            font-size: 1.6rem;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .form-header p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+    /* Grupos de formulario */
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 7px;
+        font-size: 0.9rem;
+    }
+
+    .label-icon {
+        font-size: 1rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+    .validation-error {
+        color: #e53e3e;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    /* Requisitos de contraseña */
+    .password-requirements {
+        background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+        border: 2px solid #81e6d9;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .req-title {
+        font-weight: 600;
+        color: #234e52;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+
+    .password-requirements ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .password-requirements li {
+        color: #2c7a7b;
+        font-size: 0.85rem;
+        margin: 6px 0;
+        padding-left: 5px;
+    }
+
+    /* Botón de registro */
+    .btn-register {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+        }
+
+    .btn-icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-register:hover .btn-icon {
+        transform: translateX(5px);
+    }
+
+    /* Sección de login */
+    .login-section {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+        .login-section p {
+            color: #718096;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+    .login-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: color 0.3s ease;
+    }
+
+        .login-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+    /* Scrollbar personalizado */
+    .register-card::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .register-card::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .register-card::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+
+        .register-card::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+    /* Responsive */
+    @@media (max-width: 640px) {
+        .register-card
+
+    {
+        padding: 35px 25px;
+    }
+
+    .brand-icon {
+        font-size: 3rem;
+    }
+
+    .brand-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .form-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .form-input {
+        padding: 11px 14px;
+        font-size: 0.9rem;
+    }
+
+    }
+</style>

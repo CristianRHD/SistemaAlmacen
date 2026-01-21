@@ -1,0 +1,16 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SistemaAlmacen.Data
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<button @onclick="CerrarSesion" class="btn-logout" title="Cerrar sesión">
+    🚪
+</button>
+
+@code {
+    private async Task CerrarSesion()
+    {
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
+    }
+}

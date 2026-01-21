@@ -1,0 +1,345 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using SistemaAlmacen.Data
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+@inject ApplicationDbContext Context
+
+<PageTitle>Dashboard - AlmaTrack</PageTitle>
+
+<style>
+    
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .header-flex {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .logo-box {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px;
+        height: 80px;
+    }
+
+    .header-title {
+        margin: 0;
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+    }
+
+    .header-subtitle {
+        margin: 10px 0 0 0;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+        opacity: 0.9;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s;
+        text-align: center;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .stat-icon {
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
+        margin-bottom: 20px;
+    }
+
+    .stat-title {
+        margin: 0 0 10px 0;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+        color: #666;
+    }
+
+    .stat-value {
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 700;
+        margin: 10px 0;
+    }
+
+    .stat-description {
+        color: #999;
+        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+    }
+
+    .quick-section {
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        font-size: clamp(1.3rem, 3vw, 1.8rem);
+        margin-bottom: 20px;
+        color: #333;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #667eea;
+    }
+
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .quick-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        text-decoration: none;
+        color: #333;
+        transition: transform 0.3s;
+        display: block;
+    }
+
+        .quick-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+    .quick-icon {
+        font-size: clamp(2.5rem, 5vw, 3rem);
+        margin-bottom: 15px;
+    }
+
+    .quick-title {
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: clamp(1rem, 2vw, 1.1rem);
+    }
+
+    .quick-desc {
+        color: #666;
+        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+        margin: 0;
+    }
+
+    /* Tablets */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 30px 20px;
+        }
+
+        .header-flex {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            padding: 20px;
+        }
+
+        .quick-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+
+    /* Móviles */
+    @@media (max-width: 480px) {
+        .dashboard-container {
+            padding: 0 10px;
+        }
+
+        .dashboard-header {
+            padding: 25px 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo-box {
+            min-width: 60px;
+            height: 60px;
+            padding: 10px;
+        }
+
+            .logo-box svg {
+                width: 40px !important;
+                height: 40px !important;
+            }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            padding: 20px 15px;
+            border-radius: 15px;
+        }
+
+        .stat-icon {
+            margin-bottom: 10px;
+        }
+
+        .quick-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+
+        .quick-card {
+            padding: 20px 15px;
+            border-radius: 12px;
+        }
+
+        .quick-icon {
+            margin-bottom: 10px;
+        }
+    }
+
+    /* Pantallas muy pequeñas */
+    @@media (max-width: 320px) {
+        .dashboard-header {
+            padding: 20px 10px;
+        }
+
+        .stat-card {
+            padding: 15px 10px;
+        }
+
+        .quick-card {
+            padding: 15px 10px;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="header-flex">
+            <div class="logo-box">
+                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="30" width="60" height="50" fill="#667eea" stroke="#764ba2" stroke-width="3" rx="5" />
+                    <path d="M 15 30 L 50 10 L 85 30 L 80 32 L 50 15 L 20 32 Z" fill="#764ba2" />
+                    <line x1="50" y1="30" x2="50" y2="80" stroke="white" stroke-width="3" />
+                    <line x1="20" y1="55" x2="80" y2="55" stroke="white" stroke-width="2" opacity="0.5" />
+                    <circle cx="70" cy="70" r="12" fill="#4caf50" />
+                    <path d="M 65 70 L 68 73 L 75 66" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+
+            <div>
+                <h1 class="header-title">
+                    ¡Bienvenido a AlmaTrack!
+                </h1>
+                <p class="header-subtitle">
+                    Sistema de Gestión de Inventario
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-left: 5px solid #2196f3;">
+            <div class="stat-icon">📦</div>
+            <h3 class="stat-title">Productos</h3>
+            <p class="stat-value" style="color: #2196f3;">@totalProductos</p>
+            <p class="stat-description">Total registrados</p>
+        </div>
+
+        <div class="stat-card" style="border-left: 5px solid #ff9800;">
+            <div class="stat-icon">🏷️</div>
+            <h3 class="stat-title">Categorías</h3>
+            <p class="stat-value" style="color: #ff9800;">@totalCategorias</p>
+            <p class="stat-description">Activas</p>
+        </div>
+
+        <div class="stat-card" style="border-left: 5px solid #4caf50;">
+            <div class="stat-icon">🚚</div>
+            <h3 class="stat-title">Proveedores</h3>
+            <p class="stat-value" style="color: #4caf50;">@totalProveedores</p>
+            <p class="stat-description">Registrados</p>
+        </div>
+
+        <div class="stat-card" style="border-left: 5px solid #f44336;">
+            <div class="stat-icon">⚠️</div>
+            <h3 class="stat-title">Stock Bajo</h3>
+            <p class="stat-value" style="color: #f44336;">@productosStockBajo</p>
+            <p class="stat-description">Requieren atención</p>
+        </div>
+    </div>
+
+    <div class="quick-section">
+        <h2 class="section-title">
+            ⚡ Accesos Rápidos
+        </h2>
+        <div class="quick-grid">
+            <a href="/productos" class="quick-card">
+                <div class="quick-icon">➕</div>
+                <h5 class="quick-title">Agregar Producto</h5>
+                <p class="quick-desc">Registra nuevos productos</p>
+            </a>
+
+            <a href="/productos" class="quick-card">
+                <div class="quick-icon">📦</div>
+                <h5 class="quick-title">Ver Productos</h5>
+                <p class="quick-desc">Gestiona tu inventario</p>
+            </a>
+
+            <a href="/categorias" class="quick-card">
+                <div class="quick-icon">🏷️</div>
+                <h5 class="quick-title">Categorías</h5>
+                <p class="quick-desc">Organiza productos</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalProductos = 0;
+    private int totalCategorias = 0;
+    private int totalProveedores = 0;
+    private int productosStockBajo = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        totalProductos = await Context.Productos.CountAsync();
+        totalCategorias = await Context.Categorias.Where(c => c.Activo).CountAsync();
+        totalProveedores = await Context.Proveedores.Where(p => p.Activo).CountAsync();
+        productosStockBajo = await Context.Productos
+            .Where(p => p.Stock <= p.StockMinimo && p.Activo)
+            .CountAsync();
+    }
+}

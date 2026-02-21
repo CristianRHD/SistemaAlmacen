@@ -51,7 +51,7 @@ namespace SistemaAlmacen.Models
       
         public Proveedor? Proveedor { get; set; }
 
-        public string? UserId { get; set; } // ID del usuario de Identity que lo creó
+        public string? UserId { get; set; } 
     }
 }
 

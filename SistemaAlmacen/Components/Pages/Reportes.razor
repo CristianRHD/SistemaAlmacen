@@ -11,6 +11,8 @@
 @inject IJSRuntime JS
 @inject IWebHostEnvironment Environment
 
+<DialogModal @ref="DialogRef" />
+
 <PageTitle>Reportes - AlmaTrack</PageTitle>
 
 <script>
@@ -25,23 +27,20 @@
 
 <div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
 
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: linear-gradient(135deg, #1b5cc6 0%, #0653fb 100%); border-radius: 20px; padding: 30px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 20px;">
-
-            <div style="background: white; border-radius: 15px; padding: 15px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <div style="background: white; border-radius: 15px; padding: 15px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="reportGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            <stop offset="0%" style="stop-color:#1162e4;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1965c1;stop-opacity:1" />
                         </linearGradient>
                     </defs>
-                    <!-- Gráfico de barras -->
                     <rect x="15" y="60" width="15" height="30" fill="url(#reportGrad)" rx="3" />
                     <rect x="35" y="45" width="15" height="45" fill="url(#reportGrad)" rx="3" />
                     <rect x="55" y="30" width="15" height="60" fill="url(#reportGrad)" rx="3" />
                     <rect x="75" y="20" width="15" height="70" fill="url(#reportGrad)" rx="3" />
-
                     <path d="M 20 65 L 42 50 L 62 35 L 82 25" stroke="#4caf50" stroke-width="3" fill="none" stroke-linecap="round" />
                     <circle cx="20" cy="65" r="4" fill="#4caf50" />
                     <circle cx="42" cy="50" r="4" fill="#4caf50" />
@@ -49,16 +48,15 @@
                     <circle cx="82" cy="25" r="4" fill="#8bc34a" />
                 </svg>
             </div>
-
             <div style="color: white;">
                 <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Reportes de Inventario</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 1rem;">Análisis y exportación de datos</p>
+                <p style="margin: 5px 0 0 0; opacity: 0.95; font-size: 1rem; font-weight: 500;">Análisis y exportación de datos</p>
             </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <button @onclick="GenerarExcel" disabled="@cargando"
-                    style="background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; opacity: @(cargando ? 0.7 : 1); min-width: 200px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.5); color: white; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; opacity: @(cargando ? 0.7 : 1); min-width: 200px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 @if (cargando)
                 {
                     <span>⏳ Generando...</span>
@@ -76,7 +74,7 @@
             @if (!string.IsNullOrEmpty(urlDescarga))
             {
                 <button @onclick="IniciarDescarga"
-                        style="background: #4caf50; color: white; padding: 10px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); transition: all 0.3s; animation: slideDown 0.3s ease;">
+                        style="background: #ffffff; color: #3b82f6; padding: 10px 28px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s; animation: slideDown 0.3s ease;">
                     ⬇️ Descargar Archivo
                 </button>
             }
@@ -85,74 +83,70 @@
 
     @if (cargandoDatos)
     {
-        <div style="text-align: center; padding: 80px; background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+        <div style="text-align: center; padding: 80px; background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
             <div style="font-size: 4rem; margin-bottom: 20px; animation: spin 2s linear infinite;">⏳</div>
-            <p style="font-size: 1.3rem; color: #666; font-weight: 600;">Cargando reporte...</p>
+            <p style="font-size: 1.3rem; color: #64748b; font-weight: 600;">Cargando reporte...</p>
         </div>
     }
     else
     {
-
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-
-            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 5px solid #2196f3; position: relative; overflow: hidden; transition: transform 0.3s;">
-                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.15; font-size: 4rem;">📦</div>
+            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-left: 5px solid #3b82f6; position: relative; overflow: hidden; transition: transform 0.3s;">
+                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.1; font-size: 4rem;">📦</div>
                 <div style="position: relative; z-index: 1;">
-                    <div style="color: #666; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Total Productos</div>
-                    <div style="font-size: 3rem; font-weight: 800; color: #2196f3; line-height: 1;">@productos.Count</div>
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f0f0f0;">
-                        <span style="font-size: 0.85rem; color: #999;">Registrados en sistema</span>
+                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Total Productos</div>
+                    <div style="font-size: 3rem; font-weight: 800; color: #085feb; line-height: 1;">@productosFiltrados.Count</div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f1f5f9;">
+                        <span style="font-size: 0.85rem; color: #94a3b8;">En selección actual</span>
                     </div>
                 </div>
             </div>
 
-
-            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 5px solid #4caf50; position: relative; overflow: hidden; transition: transform 0.3s;">
-                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.15; font-size: 4rem;">✅</div>
+            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-left: 5px solid #097350; position: relative; overflow: hidden; transition: transform 0.3s;">
+                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.1; font-size: 4rem;">✅</div>
                 <div style="position: relative; z-index: 1;">
-                    <div style="color: #666; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Productos Activos</div>
-                    <div style="font-size: 3rem; font-weight: 800; color: #4caf50; line-height: 1;">@productos.Count(p => p.Activo)</div>
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f0f0f0;">
-                        <span style="font-size: 0.85rem; color: #999;">@(productos.Count > 0 ? Math.Round((productos.Count(p => p.Activo) * 100.0 / productos.Count), 1) : 0)% del total</span>
+                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Estado Óptimo</div>
+                    <div style="font-size: 3rem; font-weight: 800; color: #093f2d; line-height: 1;">@productosFiltrados.Count(p => p.Stock > p.StockMinimo)</div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f1f5f9;">
+                        <span style="font-size: 0.85rem; color: #94a3b8;">Stock saludable</span>
                     </div>
                 </div>
             </div>
 
-
-            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 5px solid #f44336; position: relative; overflow: hidden; transition: transform 0.3s;">
-                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.15; font-size: 4rem;">⚠️</div>
+            <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; position: relative; overflow: hidden; transition: transform 0.3s;">
+                <div style="position: absolute; top: 15px; right: 15px; opacity: 0.1; font-size: 4rem;">⚠️</div>
                 <div style="position: relative; z-index: 1;">
-                    <div style="color: #666; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Bajo Stock</div>
-                    <div style="font-size: 3rem; font-weight: 800; color: #f44336; line-height: 1;">@productos.Count(p => p.Stock <= p.StockMinimo)</div>
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f0f0f0;">
-                        <span style="font-size: 0.85rem; color: #999;">Requieren reposición</span>
+                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Bajo Stock</div>
+                    <div style="font-size: 3rem; font-weight: 800; color: #ef4444; line-height: 1;">@productosFiltrados.Count(p => p.Stock <= p.StockMinimo)</div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #f1f5f9;">
+                        <span style="font-size: 0.85rem; color: #94a3b8;">Requieren reposición</span>
                     </div>
                 </div>
             </div>
 
-
-            <div style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3); position: relative; overflow: hidden; transition: transform 0.3s; color: white;">
+            <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; transition: transform 0.3s; color: white;">
                 <div style="position: absolute; top: 15px; right: 15px; opacity: 0.2; font-size: 4rem;">💰</div>
                 <div style="position: relative; z-index: 1;">
-                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.95;">Valor Total Inventario</div>
-                    <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">RD$@productos.Sum(p => p.Stock * p.PrecioCompra).ToString("N2")</div>
+                    <div style="font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.95;">Valor Inventario</div>
+                    <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">RD$@productosFiltrados.Sum(p => p.Stock * p.PrecioCompra).ToString("N2")</div>
                     <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(255,255,255,0.3);">
-                        <span style="font-size: 0.85rem; opacity: 0.9;">Costo total de stock</span>
+                        <span style="font-size: 0.85rem; opacity: 0.9;">Costo en selección actual</span>
                     </div>
                 </div>
             </div>
         </div>
 
-
-        <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px;">
-            <h3 style="margin: 0 0 20px 0; color: #333; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+        <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 25px;">
+            <h3 style="margin: 0 0 20px 0; color: #334155; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.8rem;">🔍</span>
                 Filtros de Búsqueda
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+
                 <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #555; font-size: 0.9rem;">Categoría</label>
-                    <select @bind="categoriaSeleccionada" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; transition: all 0.3s;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #64748b; font-size: 0.9rem;">Categoría</label>
+                    <select @bind="categoriaSeleccionada" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; color: #475569;">
                         <option value="0">🏷️ Todas las categorías</option>
                         @foreach (var cat in categorias)
                         {
@@ -162,8 +156,8 @@
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #555; font-size: 0.9rem;">Estado Stock</label>
-                    <select @bind="filtroStock" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; transition: all 0.3s;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #64748b; font-size: 0.9rem;">Estado Stock</label>
+                    <select @bind="filtroStock" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; color: #475569;">
                         <option value="">📊 Todos los niveles</option>
                         <option value="bajo">⚠️ Bajo Stock</option>
                         <option value="sin">❌ Sin Stock</option>
@@ -172,31 +166,31 @@
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #555; font-size: 0.9rem;">Estado Producto</label>
-                    <select @bind="filtroActivo" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; transition: all 0.3s;">
-                        <option value="">📦 Todos los estados</option>
-                        <option value="true">✅ Activos</option>
-                        <option value="false">🔒 Inactivos</option>
-                    </select>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #64748b; font-size: 0.9rem;">📅 Fecha Desde</label>
+                    <input type="date" @bind="fechaInicio" style="width: 100%; padding: 11px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; color: #475569; font-family: inherit;" />
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #64748b; font-size: 0.9rem;">📅 Fecha Hasta</label>
+                    <input type="date" @bind="fechaFin" style="width: 100%; padding: 11px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 0.95rem; color: #475569; font-family: inherit;" />
                 </div>
 
                 <div style="display: flex; align-items: flex-end;">
-                    <button @onclick="AplicarFiltros" style="width: 100%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                    <button @onclick="AplicarFiltros" style="width: 100%; background: linear-gradient(135deg, #3087f2, #0c63f0); color: white; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
                         🔍 Aplicar Filtros
                     </button>
                 </div>
             </div>
         </div>
 
-
-        <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+        <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
             @if (!productosFiltrados.Any())
             {
                 <div style="text-align: center; padding: 60px;">
                     <div style="font-size: 5rem; margin-bottom: 20px; opacity: 0.3;">📭</div>
-                    <p style="color: #666; font-size: 1.2rem; font-weight: 600;">No hay productos que coincidan con los filtros</p>
-                    <button @onclick="@(() => { categoriaSeleccionada = 0; filtroStock = ""; filtroActivo = ""; AplicarFiltros(); })"
-                            style="margin-top: 20px; background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <p style="color: #64748b; font-size: 1.2rem; font-weight: 600;">No hay productos que coincidan con los filtros</p>
+                    <button @onclick="LimpiarFiltros"
+                            style="margin-top: 20px; background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         🔄 Limpiar Filtros
                     </button>
                 </div>
@@ -205,11 +199,12 @@
             {
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
-                        <thead style="background: linear-gradient(135deg, #1e90ff, #2196f3); color: white;">
+                        <thead style="background: linear-gradient(135deg, #2481f2, #0960ec); color: white;">
                             <tr>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">Código</th>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">Producto</th>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">Categoría</th>
+                                <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">Fecha Registro</th>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">Stock</th>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">P. Compra</th>
                                 <th style="padding: 18px; text-align: left; font-weight: 700; font-size: 0.95rem;">P. Venta</th>
@@ -219,39 +214,40 @@
                         <tbody>
                             @foreach (var p in productosFiltrados)
                             {
-                                <tr style="border-bottom: 1px solid #f0f0f0; transition: background 0.2s;"
-                                    onmouseover="this.style.background='#f8f9fa'"
+                                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;"
+                                    onmouseover="this.style.background='#f8fafc'"
                                     onmouseout="this.style.background='white'">
-                                    <td style="padding: 16px;"><strong style="color: #667eea;">@p.Codigo</strong></td>
-                                    <td style="padding: 16px; font-weight: 600;">@p.Nombre</td>
+                                    <td style="padding: 16px;"><strong style="color: #2563eb;">@p.Codigo</strong></td>
+                                    <td style="padding: 16px; font-weight: 600; color: #334155;">@p.Nombre</td>
                                     <td style="padding: 16px;">
-                                        <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1976d2;">
+                                        <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; background: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe;">
                                             @p.Categoria.Nombre
                                         </span>
                                     </td>
+                                    <td style="padding: 16px; color: #64748b;">@p.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                     <td style="padding: 16px;">
                                         <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; @GetColorStock(p)">
                                             @p.Stock @p.Unidad
                                         </span>
                                     </td>
-                                    <td style="padding: 16px; color: #666;">RD$@p.PrecioCompra.ToString("N2")</td>
-                                    <td style="padding: 16px; color: #666;">RD$@p.PrecioVenta.ToString("N2")</td>
-                                    <td style="padding: 16px;"><strong style="color: #ff9800; font-size: 1.05rem;">RD$@((p.Stock * p.PrecioCompra).ToString("N2"))</strong></td>
+                                    <td style="padding: 16px; color: #64748b;">RD$@p.PrecioCompra.ToString("N2")</td>
+                                    <td style="padding: 16px; color: #64748b;">RD$@p.PrecioVenta.ToString("N2")</td>
+                                    <td style="padding: 16px;"><strong style="color: #d97706; font-size: 1.05rem;">RD$@((p.Stock * p.PrecioCompra).ToString("N2"))</strong></td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
 
-                <div style="padding: 25px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-top: 3px solid #667eea;">
+                <div style="padding: 25px; background: #f8fafc; border-top: 3px solid #3b82f6;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <div>
-                            <span style="font-weight: 700; color: #333; font-size: 1rem;">Total de productos:</span>
-                            <span style="background: #667eea; color: white; padding: 5px 15px; border-radius: 20px; margin-left: 10px; font-weight: 700;">@productosFiltrados.Count</span>
+                            <span style="font-weight: 700; color: #334155; font-size: 1rem;">Total de productos:</span>
+                            <span style="background: #3b82f6; color: white; padding: 5px 15px; border-radius: 20px; margin-left: 10px; font-weight: 700;">@productosFiltrados.Count</span>
                         </div>
                         <div>
-                            <span style="font-weight: 700; color: #333; font-size: 1rem;">Valor Total:</span>
-                            <span style="color: #ff9800; font-size: 1.5rem; font-weight: 800; margin-left: 10px;">RD$@productosFiltrados.Sum(p => p.Stock * p.PrecioCompra).ToString("N2")</span>
+                            <span style="font-weight: 700; color: #334155; font-size: 1rem;">Valor Total:</span>
+                            <span style="color: #d97706; font-size: 1.5rem; font-weight: 800; margin-left: 10px;">RD$@productosFiltrados.Sum(p => p.Stock * p.PrecioCompra).ToString("N2")</span>
                         </div>
                     </div>
                 </div>
@@ -283,25 +279,24 @@
         }
     }
 
-    select:focus {
+    select:focus, input[type="date"]:focus {
         outline: none;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
 
     button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
     }
 
     button:active {
         transform: translateY(0);
     }
 
-    /* Hover en cards */
     div[style*="transition: transform 0.3s"]:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08) !important;
     }
 </style>
 
@@ -310,13 +305,16 @@
     private List<Producto> productosFiltrados = new List<Producto>();
     private List<Categoria> categorias = new List<Categoria>();
 
+    // Filtros
     private int categoriaSeleccionada = 0;
     private string filtroStock = "";
-    private string filtroActivo = "";
+    private DateTime? fechaInicio; // NUEVO
+    private DateTime? fechaFin;    // NUEVO
 
     private bool cargandoDatos = true;
     private bool cargando = false;
     private string? urlDescarga = null;
+    private DialogModal DialogRef = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -329,13 +327,14 @@
 
         try
         {
+            // Filtramos solo los activos
             productos = await Context.Productos
                 .Include(p => p.Categoria)
-                .OrderBy(p => p.Nombre)
+                .Where(p => p.Activo)
+                .OrderByDescending(p => p.FechaCreacion) // Ordenar por fecha más reciente
                 .ToListAsync();
 
             categorias = await Context.Categorias
-                .Where(c => c.Activo)
                 .OrderBy(c => c.Nombre)
                 .ToListAsync();
 
@@ -343,7 +342,7 @@
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error al cargar datos: {ex.Message}");
+            await DialogRef.ShowErrorAsync("Error al cargar datos", ex.Message);
         }
 
         cargandoDatos = false;
@@ -353,41 +352,52 @@
     {
         productosFiltrados = productos;
 
+        // Filtro Categoría
         if (categoriaSeleccionada > 0)
         {
             productosFiltrados = productosFiltrados.Where(p => p.CategoriaId == categoriaSeleccionada).ToList();
         }
 
+        // Filtro Stock
         if (!string.IsNullOrEmpty(filtroStock))
         {
             if (filtroStock == "bajo")
-            {
                 productosFiltrados = productosFiltrados.Where(p => p.Stock > 0 && p.Stock <= p.StockMinimo).ToList();
-            }
             else if (filtroStock == "sin")
-            {
                 productosFiltrados = productosFiltrados.Where(p => p.Stock == 0).ToList();
-            }
             else if (filtroStock == "normal")
-            {
                 productosFiltrados = productosFiltrados.Where(p => p.Stock > p.StockMinimo).ToList();
-            }
         }
 
-        if (!string.IsNullOrEmpty(filtroActivo))
+        // NUEVO: Filtro Fecha Inicio
+        if (fechaInicio.HasValue)
         {
-            bool activo = filtroActivo == "true";
-            productosFiltrados = productosFiltrados.Where(p => p.Activo == activo).ToList();
+            productosFiltrados = productosFiltrados.Where(p => p.FechaCreacion.Date >= fechaInicio.Value.Date).ToList();
+        }
+
+        // NUEVO: Filtro Fecha Fin
+        if (fechaFin.HasValue)
+        {
+            productosFiltrados = productosFiltrados.Where(p => p.FechaCreacion.Date <= fechaFin.Value.Date).ToList();
         }
 
         urlDescarga = null;
     }
 
+    private void LimpiarFiltros()
+    {
+        categoriaSeleccionada = 0;
+        filtroStock = "";
+        fechaInicio = null;
+        fechaFin = null;
+        AplicarFiltros();
+    }
+
     private string GetColorStock(Producto p)
     {
-        if (p.Stock == 0) return "background: linear-gradient(135deg, #f44336, #d32f2f); color: white;";
-        if (p.Stock <= p.StockMinimo) return "background: linear-gradient(135deg, #ff9800, #f57c00); color: white;";
-        return "background: linear-gradient(135deg, #4caf50, #388e3c); color: white;";
+        if (p.Stock == 0) return "background: linear-gradient(135deg, #ef4444, #dc2626); color: white;";
+        if (p.Stock <= p.StockMinimo) return "background: linear-gradient(135deg, #f59e0b, #d97706); color: white;";
+        return "background: linear-gradient(135deg, #10b981, #059669); color: white;";
     }
 
     private async Task GenerarExcel()
@@ -401,6 +411,7 @@
             string carpetaDescargas = Path.Combine(Environment.WebRootPath, "descargas");
             if (!Directory.Exists(carpetaDescargas)) Directory.CreateDirectory(carpetaDescargas);
 
+            // Limpieza de archivos viejos
             try
             {
                 foreach (var f in new DirectoryInfo(carpetaDescargas).GetFiles())
@@ -416,18 +427,20 @@
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Inventario");
 
+                // Headers
                 worksheet.Cell(1, 1).Value = "Código";
                 worksheet.Cell(1, 2).Value = "Producto";
                 worksheet.Cell(1, 3).Value = "Categoría";
-                worksheet.Cell(1, 4).Value = "Stock";
-                worksheet.Cell(1, 5).Value = "Unidad";
-                worksheet.Cell(1, 6).Value = "P. Compra";
-                worksheet.Cell(1, 7).Value = "P. Venta";
-                worksheet.Cell(1, 8).Value = "Valor Total";
+                worksheet.Cell(1, 4).Value = "Fecha Registro"; // NUEVA COLUMNA EXCEL
+                worksheet.Cell(1, 5).Value = "Stock";
+                worksheet.Cell(1, 6).Value = "Unidad";
+                worksheet.Cell(1, 7).Value = "P. Compra";
+                worksheet.Cell(1, 8).Value = "P. Venta";
+                worksheet.Cell(1, 9).Value = "Valor Total";
 
-                var headerRange = worksheet.Range(1, 1, 1, 8);
+                var headerRange = worksheet.Range(1, 1, 1, 9);
                 headerRange.Style.Font.Bold = true;
-                headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#667eea");
+                headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#3b82f6");
                 headerRange.Style.Font.FontColor = XLColor.White;
                 headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
@@ -437,23 +450,26 @@
                     worksheet.Cell(row, 1).Value = p.Codigo;
                     worksheet.Cell(row, 2).Value = p.Nombre;
                     worksheet.Cell(row, 3).Value = p.Categoria.Nombre;
-                    worksheet.Cell(row, 4).Value = p.Stock;
-                    worksheet.Cell(row, 5).Value = p.Unidad;
-                    worksheet.Cell(row, 6).Value = p.PrecioCompra;
-                    worksheet.Cell(row, 7).Value = p.PrecioVenta;
-                    worksheet.Cell(row, 8).Value = p.Stock * p.PrecioCompra;
+                    worksheet.Cell(row, 4).Value = p.FechaCreacion; // DATO FECHA
+                    worksheet.Cell(row, 5).Value = p.Stock;
+                    worksheet.Cell(row, 6).Value = p.Unidad;
+                    worksheet.Cell(row, 7).Value = p.PrecioCompra;
+                    worksheet.Cell(row, 8).Value = p.PrecioVenta;
+                    worksheet.Cell(row, 9).Value = p.Stock * p.PrecioCompra;
 
-                    worksheet.Cell(row, 6).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
+                    worksheet.Cell(row, 4).Style.NumberFormat.Format = "dd/mm/yyyy"; // Formato Fecha
                     worksheet.Cell(row, 7).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
                     worksheet.Cell(row, 8).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
+                    worksheet.Cell(row, 9).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
                     row++;
                 }
 
-                worksheet.Cell(row, 7).Value = "TOTAL:";
-                worksheet.Cell(row, 7).Style.Font.Bold = true;
-                worksheet.Cell(row, 8).Value = productosFiltrados.Sum(p => p.Stock * p.PrecioCompra);
-                worksheet.Cell(row, 8).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
+                // Total Row
+                worksheet.Cell(row, 8).Value = "TOTAL:";
                 worksheet.Cell(row, 8).Style.Font.Bold = true;
+                worksheet.Cell(row, 9).Value = productosFiltrados.Sum(p => p.Stock * p.PrecioCompra);
+                worksheet.Cell(row, 9).Style.NumberFormat.Format = "\"RD$\"#,##0.00";
+                worksheet.Cell(row, 9).Style.Font.Bold = true;
 
                 worksheet.Columns().AdjustToContents();
                 workbook.SaveAs(rutaFisica);
@@ -463,7 +479,7 @@
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            await DialogRef.ShowErrorAsync("Error", ex.Message);
         }
         finally
         {

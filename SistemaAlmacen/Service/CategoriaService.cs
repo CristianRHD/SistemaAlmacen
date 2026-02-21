@@ -15,7 +15,10 @@ namespace SistemaAlmacen.Services
 
         public async Task<List<Categoria>> ObtenerTodosAsync()
         {
-            return await _context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
+            
+            return await _context.Categorias
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
         }
 
         public async Task<Categoria?> ObtenerPorIdAsync(int id)
@@ -29,6 +32,7 @@ namespace SistemaAlmacen.Services
         {
             try
             {
+                
                 var existe = await _context.Categorias.AnyAsync(c => c.Nombre == categoria.Nombre);
                 if (existe) return false;
 
@@ -55,7 +59,6 @@ namespace SistemaAlmacen.Services
 
                 categoriaExistente.Nombre = categoria.Nombre;
                 categoriaExistente.Descripcion = categoria.Descripcion;
-                categoriaExistente.Activo = categoria.Activo;
 
                 await _context.SaveChangesAsync();
                 return true;
@@ -66,6 +69,7 @@ namespace SistemaAlmacen.Services
             }
         }
 
+      
         public async Task<bool> EliminarAsync(int id)
         {
             try
@@ -73,22 +77,15 @@ namespace SistemaAlmacen.Services
                 var categoria = await _context.Categorias.FindAsync(id);
                 if (categoria == null) return false;
 
-                var tieneProductos = await _context.Productos.AnyAsync(p => p.CategoriaId == id);
-
-                if (tieneProductos)
-                {
-                    categoria.Activo = false;
-                }
-                else
-                {
-                    _context.Categorias.Remove(categoria);
-                }
+               
+                _context.Categorias.Remove(categoria);
 
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch
             {
+                
                 return false;
             }
         }
@@ -96,7 +93,7 @@ namespace SistemaAlmacen.Services
         public async Task<int> ContarProductosAsync(int categoriaId)
         {
             return await _context.Productos
-                .Where(p => p.CategoriaId == categoriaId)
+                .Where(p => p.CategoriaId == categoriaId) 
                 .CountAsync();
         }
     }

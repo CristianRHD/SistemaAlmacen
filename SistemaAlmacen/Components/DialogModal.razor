@@ -1,0 +1,305 @@
+@{
+    /// Componente modal personalizado para confirmaciones y alertas
+}
+
+<style>
+    .modal-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .modal-dialog-content {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 450px;
+        width: 90%;
+        animation: slideUp 0.3s ease-out;
+        overflow: hidden;
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-dialog-header {
+        padding: 24px 24px 16px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modal-dialog-icon {
+        font-size: 3rem;
+        margin-bottom: 12px;
+    }
+
+    .modal-dialog-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .modal-dialog-body {
+        padding: 16px 24px;
+    }
+
+    .modal-dialog-message {
+        margin: 0;
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.6;
+        word-wrap: break-word;
+    }
+
+    .modal-dialog-footer {
+        padding: 16px 24px 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .modal-dialog-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        min-width: 100px;
+    }
+
+    .modal-dialog-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .modal-dialog-btn-primary {
+        background: linear-gradient(135deg, #0e7512, #1eb325);
+        color: white;
+    }
+
+    .modal-dialog-btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .modal-dialog-btn-danger {
+        background: linear-gradient(135deg, #c72b20, #da190b);
+        color: white;
+    }
+
+    .modal-dialog-btn-danger:hover {
+        box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    }
+
+    .modal-dialog-btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .modal-dialog-btn-secondary:hover {
+        background: #d0d0d0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-dialog-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Estilos por tipo */
+    .modal-dialog-success .modal-dialog-icon {
+        color: #4caf50;
+    }
+
+    .modal-dialog-error .modal-dialog-icon {
+        color: #ae1f14;
+    }
+
+    .modal-dialog-warning .modal-dialog-icon {
+        color: #a86707;
+    }
+
+    .modal-dialog-info .modal-dialog-icon {
+        color: #117acf;
+    }
+
+    @@media (max-width: 600px) {
+        .modal-dialog-content {
+            width: 95%;
+        }
+
+        .modal-dialog-header {
+            padding: 20px 16px 12px;
+        }
+
+        .modal-dialog-body {
+            padding: 12px 16px;
+        }
+
+        .modal-dialog-footer {
+            padding: 12px 16px 16px;
+            flex-direction: column;
+        }
+
+        .modal-dialog-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+@if (IsOpen)
+{
+    <div class="modal-dialog-overlay" @onclick="OnOverlayClick">
+        <div class="modal-dialog-content modal-dialog-@Type" @onclick:stopPropagation>
+            <div class="modal-dialog-header">
+                <div class="modal-dialog-icon">@Icon</div>
+                <h2 class="modal-dialog-title">@Title</h2>
+            </div>
+
+            <div class="modal-dialog-body">
+                <p class="modal-dialog-message">@Message</p>
+            </div>
+
+            <div class="modal-dialog-footer">
+                @if (ShowCancelButton)
+                {
+                    <button class="modal-dialog-btn modal-dialog-btn-secondary" @onclick="OnCancel" disabled="@IsLoading">
+                        Cancelar
+                    </button>
+                }
+
+                @if (IsConfirmation)
+                {
+                    <button class="modal-dialog-btn modal-dialog-btn-danger" @onclick="OnConfirm" disabled="@IsLoading">
+                        @(IsLoading ? "⏳ Procesando..." : ConfirmButtonText)
+                    </button>
+                }
+                else
+                {
+                    <button class="modal-dialog-btn modal-dialog-btn-primary" @onclick="OnOk" disabled="@IsLoading">
+                        @(IsLoading ? "⏳ Procesando..." : OkButtonText)
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public bool IsOpen { get; set; } = false;
+    public string Title { get; set; } = "";
+    public string Message { get; set; } = "";
+    public string Type { get; set; } = "info"; // info, success, error, warning
+    public string Icon { get; set; } = "ℹ️";
+    public bool IsConfirmation { get; set; } = false;
+    public bool IsLoading { get; set; } = false;
+    public bool ShowCancelButton { get; set; } = true;
+    public string OkButtonText { get; set; } = "Aceptar";
+    public string ConfirmButtonText { get; set; } = "Confirmar";
+
+    private TaskCompletionSource<bool> _taskCompletionSource = default!;
+
+    public async Task<bool> ShowConfirmAsync(string title, string message, string confirmText = "Confirmar", string icon = "⚠️")
+    {
+        Title = title;
+        Message = message;
+        Type = "warning";
+        Icon = icon;
+        IsConfirmation = true;
+        ShowCancelButton = true;
+        ConfirmButtonText = confirmText;
+        IsLoading = false;
+        IsOpen = true;
+
+        _taskCompletionSource = new TaskCompletionSource<bool>();
+        StateHasChanged();
+
+        return await _taskCompletionSource.Task;
+    }
+
+    public async Task ShowAlertAsync(string title, string message, string type = "info", string icon = "ℹ️")
+    {
+        Title = title;
+        Message = message;
+        Type = type;
+        Icon = icon;
+        IsConfirmation = false;
+        ShowCancelButton = false;
+        OkButtonText = "Aceptar";
+        IsLoading = false;
+        IsOpen = true;
+
+        _taskCompletionSource = new TaskCompletionSource<bool>();
+        StateHasChanged();
+
+        await _taskCompletionSource.Task;
+    }
+
+    public async Task ShowSuccessAsync(string title, string message = "")
+    {
+        await ShowAlertAsync(title, message, "success", "✅");
+    }
+
+    public async Task ShowErrorAsync(string title, string message = "")
+    {
+        await ShowAlertAsync(title, message, "error", "❌");
+    }
+
+    private void OnOverlayClick()
+    {
+        if (!IsLoading && IsConfirmation)
+        {
+            OnCancel();
+        }
+    }
+
+    private void OnOk()
+    {
+        IsOpen = false;
+        _taskCompletionSource?.TrySetResult(false);
+    }
+
+    private void OnCancel()
+    {
+        IsOpen = false;
+        _taskCompletionSource?.TrySetResult(false);
+    }
+
+    private void OnConfirm()
+    {
+        IsOpen = false;
+        _taskCompletionSource?.TrySetResult(true);
+    }
+
+    public void SetLoading(bool loading)
+    {
+        IsLoading = loading;
+        StateHasChanged();
+    }
+}

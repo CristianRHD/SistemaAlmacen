@@ -4,14 +4,15 @@
 @using SistemaAlmacen.Services
 @using Microsoft.AspNetCore.Authorization
 @inject UsuarioService UsuarioService
-@inject IJSRuntime JS
+
+<DialogModal @ref="DialogRef" />
 
 <PageTitle>Usuarios - AlmaTrack</PageTitle>
 
 <div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; border-bottom: 3px solid #667eea; gap: 20px; flex-wrap: wrap;">
         <h1 style="margin: 0; font-size: 2rem; color: #2d3748; flex: 1; min-width: 250px;">👥 Gestión de Usuarios</h1>
-        <button @onclick="AbrirModalNuevo" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+        <button @onclick="AbrirModalNuevo" style="background: linear-gradient(135deg, #1f44e7, #221692); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
             ➕ Nuevo Usuario
         </button>
     </div>
@@ -57,7 +58,7 @@
             <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
-                        <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <thead style="background: linear-gradient(135deg, #1c3dcf, #1d11c4); color: white;">
                             <tr>
                                 <th style="padding: 15px; text-align: left; font-weight: 600;">Usuario</th>
                                 <th style="padding: 15px; text-align: left; font-weight: 600;">Nombre Completo</th>
@@ -73,7 +74,7 @@
                             {
                                 var rolInfo = rolesDisponibles.FirstOrDefault(r => r.Nombre == u.Rol);
                                 <tr style="border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;">
-                                    <td style="padding: 15px;"><strong style="color: #667eea;">@u.UserName</strong></td>
+                                    <td style="padding: 15px;"><strong style="color: #07239f;">@u.UserName</strong></td>
                                     <td style="padding: 15px; color: #2d3748;">@(u.NombreCompleto ?? "N/A")</td>
                                     <td style="padding: 15px; color: #2d3748;">@u.Email</td>
                                     <td style="padding: 15px;">
@@ -227,7 +228,7 @@
                     <button @onclick="CerrarModal" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
                         Cancelar
                     </button>
-                    <button @onclick="Guardar" disabled="@guardando" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; opacity: @(guardando ? "0.6" : "1"); transition: all 0.2s;">
+                    <button @onclick="Guardar" disabled="@guardando" style="background: #132994; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; opacity: @(guardando ? "0.6" : "1"); transition: all 0.2s;">
                         @(guardando ? "⏳ Guardando..." : "💾 Guardar")
                     </button>
                 </div>
@@ -250,6 +251,7 @@
     private bool mostrarModal = false;
     private bool esEdicion = false;
     private bool guardando = false;
+    private DialogModal DialogRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -343,7 +345,7 @@
             {
                 await Cargar();
                 CerrarModal();
-                await JS.InvokeVoidAsync("alert", $"✅ {resultado.message}");
+                await DialogRef.ShowSuccessAsync("Usuario guardado", resultado.message);
             }
             else
             {
@@ -363,7 +365,12 @@
     private async Task CambiarEstado(UsuarioDto u)
     {
         var accion = u.Activo ? "bloquear" : "desbloquear";
-        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de {accion} al usuario '{u.UserName}'?");
+        bool ok = await DialogRef.ShowConfirmAsync(
+            $"{(u.Activo ? "Bloquear" : "Desbloquear")} Usuario",
+            $"¿Está seguro de {accion} al usuario '{u.UserName}'?",
+            (u.Activo ? "Bloquear" : "Desbloquear"),
+            "🔒"
+        );
 
         if (ok)
         {
@@ -371,18 +378,23 @@
             if (success)
             {
                 await Cargar();
-                await JS.InvokeVoidAsync("alert", $"✅ {message}");
+                await DialogRef.ShowSuccessAsync((u.Activo ? "Usuario bloqueado" : "Usuario desbloqueado"), message);
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", $"❌ {message}");
+                await DialogRef.ShowErrorAsync("Error", message);
             }
         }
     }
 
     private async Task Eliminar(UsuarioDto u)
     {
-        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar al usuario '{u.UserName}'? Esta acción no se puede deshacer.");
+        bool ok = await DialogRef.ShowConfirmAsync(
+            "Eliminar Usuario",
+            $"¿Está seguro de eliminar al usuario '{u.UserName}'? Esta acción no se puede deshacer.",
+            "Eliminar",
+            "🗑️"
+        );
 
         if (ok)
         {
@@ -390,11 +402,11 @@
             if (success)
             {
                 await Cargar();
-                await JS.InvokeVoidAsync("alert", $"✅ {message}");
+                await DialogRef.ShowSuccessAsync("Usuario eliminado", message);
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", $"❌ {message}");
+                await DialogRef.ShowErrorAsync("Error", message);
             }
         }
     }

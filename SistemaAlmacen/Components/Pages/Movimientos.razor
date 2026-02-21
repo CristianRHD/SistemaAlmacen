@@ -6,401 +6,17 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Authorization
 @inject ApplicationDbContext Context
-@inject IJSRuntime JS
 
-<PageTitle>Movimientos</PageTitle>
-<style>
-    /* Movimientos.razor.css */
 
-    /* Contenedor principal */
-    .movimientos-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
+<DialogModal @ref="DialogRef" /><PageTitle>Movimientos</PageTitle>
 
-    /* Header */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #2196f3;
-    }
 
-    .page-title {
-        margin: 0;
-        font-size: 2rem;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    /* Grid de estadísticas */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stat-card-entrada {
-        background: linear-gradient(135deg, #4caf50, #45a049);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-    }
-
-    .stat-card-salida {
-        background: linear-gradient(135deg, #f44336, #e53935);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
-    }
-
-    .stat-card-total {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-    }
-
-    .stat-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-
-    .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .stat-label {
-        font-size: 1rem;
-        opacity: 0.95;
-    }
-
-    /* Estados de carga */
-    .loading-state {
-        text-align: center;
-        padding: 60px;
-        background: white;
-        border-radius: 12px;
-    }
-
-    .loading-text {
-        font-size: 1.2rem;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        background: white;
-        border-radius: 12px;
-    }
-
-    .empty-icon {
-        font-size: 5rem;
-        margin-bottom: 20px;
-    }
-
-    .empty-title {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-
-    .empty-text {
-        color: #666;
-        margin-bottom: 30px;
-    }
-
-    /* Filtros */
-    .filters-container {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .search-input {
-        flex: 1;
-        padding: 12px 20px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-    }
-
-    .filter-select {
-        padding: 13px 20px;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-
-    /* Tabla */
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .table-header {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-    }
-
-        .table-header th {
-            padding: 15px;
-            text-align: left;
-        }
-
-    .table-row {
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .table-cell {
-        padding: 15px;
-    }
-
-    /* Badges */
-    .badge-entrada {
-        display: inline-block;
-        min-width: 100px;
-        text-align: center;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #e8f5e9;
-        color: #2e7d32;
-        border: 1px solid #c8e6c9;
-    }
-
-    .badge-salida {
-        display: inline-block;
-        min-width: 100px;
-        text-align: center;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #ffcdd2;
-    }
-
-    .badge-cantidad {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #2196f3;
-        color: white;
-    }
-
-    .producto-info {
-        font-size: 0.85rem;
-        color: #666;
-    }
-
-    /* Botones de acción */
-    .btn-delete {
-        padding: 8px 12px;
-        background: #f44336;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1.1rem;
-    }
-
-    .table-footer {
-        padding: 15px;
-        background: white;
-        text-align: right;
-        border-radius: 0 0 12px 12px;
-    }
-
-    /* Modal */
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 25px;
-        border-bottom: 2px solid #f0f0f0;
-    }
-
-    .modal-title {
-        margin: 0;
-        font-size: 1.5rem;
-    }
-
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #666;
-    }
-
-    .modal-body {
-        padding: 25px;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
-
-    .form-input,
-    .form-select,
-    .form-textarea {
-        width: 100%;
-        padding: 10px 15px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-    }
-
-    .error-message {
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #ef5350;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 15px;
-        padding-top: 20px;
-        border-top: 2px solid #f0f0f0;
-    }
-
-    .btn-secondary {
-        background: #6c757d;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .btn-save {
-        background: #2196f3;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .movimientos-container
-
-    {
-        padding: 15px;
-    }
-
-    .page-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-
-    .page-title {
-        font-size: 1.5rem;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    .filters-container {
-        flex-direction: column;
-    }
-
-    .table-container {
-        overflow-x: auto;
-    }
-
-    .data-table {
-        min-width: 800px;
-    }
-
-    }
-
-    @@media (max-width: 480px) {
-        .movimientos-container
-
-    {
-        padding: 10px;
-    }
-
-    .modal-content {
-        width: 95%;
-        max-height: 95vh;
-    }
-
-    .modal-body {
-        padding: 20px 15px;
-    }
-
-    }
-</style>
 
 <div class="movimientos-container">
     <div class="page-header">
         <h1 class="page-title">📊 Registro de Movimientos</h1>
         <button @onclick="AbrirModalNuevo" class="btn-primary">
-            ➕ Nuevo Movimiento
+            ➕ Nuevo Movimiento Múltiple
         </button>
     </div>
 
@@ -410,17 +26,15 @@
             <div class="stat-value">@TotalEntradas</div>
             <div class="stat-label">Entradas (Hoy)</div>
         </div>
-
         <div class="stat-card-salida">
             <div class="stat-icon">📉</div>
             <div class="stat-value">@TotalSalidas</div>
             <div class="stat-label">Salidas (Hoy)</div>
         </div>
-
         <div class="stat-card-total">
             <div class="stat-icon">📋</div>
             <div class="stat-value">@movimientos.Count</div>
-            <div class="stat-label">Total Movimientos</div>
+            <div class="stat-label">Movimientos Totales</div>
         </div>
     </div>
 
@@ -430,22 +44,11 @@
             <p class="loading-text">⏳ Cargando movimientos...</p>
         </div>
     }
-    else if (!movimientos.Any())
-    {
-        <div class="empty-state">
-            <div class="empty-icon">📊</div>
-            <h3 class="empty-title">No hay movimientos registrados</h3>
-            <p class="empty-text">Comienza registrando tu primer movimiento</p>
-            <button @onclick="AbrirModalNuevo" class="btn-primary">
-                ➕ Agregar Movimiento
-            </button>
-        </div>
-    }
     else
     {
         <div class="filters-container">
             <input type="text" @bind="busqueda" @bind:event="oninput"
-                   placeholder="🔍 Buscar por producto o referencia..."
+                   placeholder="🔍 Buscar por responsable, referencia, producto u observación..."
                    class="search-input" />
 
             <select @bind="filtroTipo" class="filter-select">
@@ -456,52 +59,53 @@
         </div>
 
         <div class="table-container">
-            <table class="data-table">
-                <thead class="table-header">
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Tipo</th>
-                        <th>Referencia</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Observaciones</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var m in Filtrados)
-                    {
-                        <tr class="table-row">
-                            <td class="table-cell">@m.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="table-cell">
-                                @if (m.Tipo == "Entrada")
-                                {
-                                    <span class="badge-entrada">📈 Entrada</span>
-                                }
-                                else
-                                {
-                                    <span class="badge-salida">📉 Salida</span>
-                                }
-                            </td>
-                            <td class="table-cell"><strong>@m.Referencia</strong></td>
-                            <td class="table-cell">
-                                <div>@m.Producto?.Nombre</div>
-                                <div class="producto-info">Código: @m.Producto?.Codigo</div>
-                            </td>
-                            <td class="table-cell">
-                                <span class="badge-cantidad">@m.Cantidad</span>
-                            </td>
-                            <td class="table-cell">@(m.Observaciones ?? "-")</td>
-                            <td class="table-cell">
-                                <button @onclick="() => Eliminar(m)" class="btn-delete">🗑️</button>
-                            </td>
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead class="table-header">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Referencia</th>
+                            <th>Tipo</th>
+                            <th>Detalles / Responsable</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Acciones</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <div class="table-footer">
-            <p><strong>Total:</strong> @Filtrados.Count movimientos</p>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Filtrados)
+                        {
+                            <tr class="table-row">
+                                <td class="table-cell">@m.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="table-cell"><strong>@m.Referencia</strong></td>
+                                <td class="table-cell">
+                                    @if (m.Tipo == "Entrada")
+                                    {
+                                        <span class="badge-entrada">📥 Entrada</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-salida">📤 Salida</span>
+                                    }
+                                </td>
+                                <td class="table-cell" style="max-width: 250px;">
+                                    <span style="display:block; font-size:0.9rem; color:#333;">@(m.Observaciones ?? "-")</span>
+                                </td>
+                                <td class="table-cell">
+                                    <div style="font-weight:600;">@m.Producto?.Nombre</div>
+                                    <div class="producto-info">Cod: @m.Producto?.Codigo</div>
+                                </td>
+                                <td class="table-cell">
+                                    <span class="badge-cantidad">@m.Cantidad</span>
+                                </td>
+                                <td class="table-cell">
+                                    <button @onclick="() => Eliminar(m)" class="btn-delete" title="Revertir Movimiento">🗑️</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
 </div>
@@ -511,55 +115,98 @@
     <div class="modal-overlay" @onclick="CerrarModal">
         <div class="modal-content" @onclick:stopPropagation>
             <div class="modal-header">
-                <h3 class="modal-title">➕ Nuevo Movimiento</h3>
+                <h3 class="modal-title">📝 Registrar Movimiento</h3>
                 <button @onclick="CerrarModal" class="btn-close">×</button>
             </div>
 
             <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Tipo de Movimiento *</label>
-                    <select @bind="form.Tipo" class="form-select">
-                        <option value="">Seleccione...</option>
-                        <option value="Entrada">Entrada</option>
-                        <option value="Salida">Salida</option>
-                    </select>
+                <div class="row-2-col">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Movimiento *</label>
+                        <select @bind="tipoMovimientoGlobal" class="form-select" @oninput="CambiarTipoGlobal">
+                            <option value="Entrada">📥 Entrada (Recepción)</option>
+                            <option value="Salida">📤 Salida (Despacho)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Referencia (Auto)</label>
+                        <input type="text" @bind="referenciaGlobal" readonly class="form-input readonly" />
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Producto *</label>
-                    <select @bind="form.ProductoId" class="form-select">
-                        <option value="0">Seleccione...</option>
-                        @foreach (var p in productos)
-                        {
-                            <option value="@p.Id">@p.Nombre (@p.Codigo)</option>
-                        }
-                    </select>
+                    <label class="form-label">Responsable / Solicitante *</label>
+                    <input type="text" @bind="responsableGlobal" placeholder="Ej: Juan Pérez, Cliente Final, Dpto. Ventas..." class="form-input" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Cantidad *</label>
-                    <input type="number" @bind="form.Cantidad" min="1" class="form-input" />
+                    <label class="form-label">Observaciones / Notas Adicionales</label>
+                    <textarea @bind="observacionesGlobal" rows="2" placeholder="Ej: Mercancía revisada, entrega parcial..." class="form-textarea"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Referencia</label>
-                    <input type="text" @bind="form.Referencia" placeholder="Ej: FAC-001, VENTA-123" class="form-input" />
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;" />
+
+                <h4 style="margin-bottom: 15px; color: #1414b8;">📦 Agregar Productos</h4>
+
+                <div class="add-product-box">
+                    <div class="form-group">
+                        <label class="form-label">Producto</label>
+                        <select @bind="productoTempId" class="form-select">
+                            <option value="0">-- Seleccionar Producto --</option>
+                            @foreach (var p in productos)
+                            {
+                                <option value="@p.Id">@p.Nombre (Stock Actual: @p.Stock)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row-2-col">
+                        <div class="form-group">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" @bind="cantidadTemp" min="1" class="form-input" />
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button @onclick="AgregarProductoALista" class="btn-add">➕ Agregar a Lista</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Observaciones</label>
-                    <textarea @bind="form.Observaciones" rows="3" class="form-textarea"></textarea>
-                </div>
+                @if (listaMovimientosTemp.Any())
+                {
+                    <div class="temp-list-container">
+                        <table class="temp-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in listaMovimientosTemp)
+                                {
+                                    <tr>
+                                        <td>@productos.FirstOrDefault(p => p.Id == item.ProductoId)?.Nombre</td>
+                                        <td><strong>@item.Cantidad</strong></td>
+                                        <td>
+                                            <button @onclick="() => RemoverDeLista(item)" class="btn-sm-danger">Quitar</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
 
                 @if (!string.IsNullOrEmpty(error))
                 {
-                    <div class="error-message">❌ @error</div>
+                    <div class="error-message">⚠️ @error</div>
                 }
 
                 <div class="modal-footer">
                     <button @onclick="CerrarModal" class="btn-secondary">Cancelar</button>
-                    <button @onclick="Guardar" disabled="@guardando" class="btn-save">
-                        @(guardando ? "⏳ Guardando..." : "💾 Guardar")
+                    <button @onclick="GuardarTodo" disabled="@(!listaMovimientosTemp.Any() || guardando)" class="btn-save">
+                        @(guardando ? "💾 Guardando..." : $"💾 Finalizar ({listaMovimientosTemp.Count} productos)")
                     </button>
                 </div>
             </div>
@@ -568,16 +215,30 @@
 }
 
 @code {
+    // Modelos
     private List<Movimiento> movimientos = new();
     private List<Producto> productos = new();
-    private Movimiento form = new();
+
+    // Variables para el formulario múltiple
+    private List<Movimiento> listaMovimientosTemp = new();
+    private string tipoMovimientoGlobal = "Salida"; // Por defecto Salida
+    private string referenciaGlobal = "";
+    private string responsableGlobal = "";
+    private string observacionesGlobal = ""; // VARIABLE RESTAURADA
+
+    // Variables temporales para agregar productos
+    private int productoTempId = 0;
+    private int cantidadTemp = 1;
+
     private string busqueda = "";
     private string filtroTipo = "";
     private string error = "";
     private bool cargando = true;
     private bool mostrarModal = false;
     private bool guardando = false;
+    private DialogModal DialogRef = default!;
 
+    // Estadísticas
     private int TotalEntradas => movimientos.Count(m => m.Tipo == "Entrada" && m.Fecha.Date == DateTime.Today);
     private int TotalSalidas => movimientos.Count(m => m.Tipo == "Salida" && m.Fecha.Date == DateTime.Today);
 
@@ -591,7 +252,8 @@
             {
                 query = query.Where(m =>
                     (m.Producto?.Nombre?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Referencia?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false)
+                    (m.Referencia?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Observaciones?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false)
                 );
             }
 
@@ -612,7 +274,6 @@
     private async Task Cargar()
     {
         cargando = true;
-
         movimientos = await Context.Movimientos
             .Include(m => m.Producto)
             .OrderByDescending(m => m.Fecha)
@@ -622,78 +283,130 @@
             .Where(p => p.Activo)
             .OrderBy(p => p.Nombre)
             .ToListAsync();
-
         cargando = false;
     }
 
     private void AbrirModalNuevo()
     {
-        form = new Movimiento
-        {
-            Fecha = DateTime.Now,
-            Referencia = GenerarReferencia()
-        };
+        // Reiniciar todas las variables
+        listaMovimientosTemp = new();
+        referenciaGlobal = $"MOV-{DateTime.Now:yyyyMMddHHmmss}";
+        responsableGlobal = "";
+        observacionesGlobal = ""; // Limpiar observaciones
+        productoTempId = 0;
+        cantidadTemp = 1;
+        tipoMovimientoGlobal = "Salida";
         error = "";
         mostrarModal = true;
     }
 
-    private async Task Guardar()
+    private void CambiarTipoGlobal(ChangeEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(form.Tipo))
+        tipoMovimientoGlobal = e.Value?.ToString() ?? "Salida";
+        listaMovimientosTemp.Clear(); // Limpiar lista al cambiar tipo para evitar errores de stock
+    }
+
+    private void AgregarProductoALista()
+    {
+        error = "";
+
+        if (productoTempId == 0)
         {
-            error = "Seleccione el tipo de movimiento";
+            error = "Seleccione un producto.";
             return;
         }
 
-        if (form.ProductoId == 0)
+        if (cantidadTemp <= 0)
         {
-            error = "Seleccione un producto";
+            error = "La cantidad debe ser mayor a 0.";
             return;
         }
 
-        if (form.Cantidad <= 0)
+        var prod = productos.FirstOrDefault(p => p.Id == productoTempId);
+        if (prod == null) return;
+
+        // Validar Stock si es salida
+        if (tipoMovimientoGlobal == "Salida")
         {
-            error = "La cantidad debe ser mayor a 0";
+            var cantidadEnLista = listaMovimientosTemp.Where(x => x.ProductoId == productoTempId).Sum(x => x.Cantidad);
+            if ((prod.Stock - cantidadEnLista) < cantidadTemp)
+            {
+                error = $"Stock insuficiente para '{prod.Nombre}'. Disponible real: {prod.Stock - cantidadEnLista}";
+                return;
+            }
+        }
+
+        // Agregar a la lista temporal
+        listaMovimientosTemp.Add(new Movimiento
+        {
+            ProductoId = productoTempId,
+            Cantidad = cantidadTemp,
+            Tipo = tipoMovimientoGlobal,
+            Referencia = referenciaGlobal,
+            Fecha = DateTime.Now
+        });
+
+        // Reset inputs temp
+        productoTempId = 0;
+        cantidadTemp = 1;
+    }
+
+    private void RemoverDeLista(Movimiento item)
+    {
+        listaMovimientosTemp.Remove(item);
+    }
+
+    private async Task GuardarTodo()
+    {
+        if (!listaMovimientosTemp.Any())
+        {
+            error = "No hay productos en la lista.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(responsableGlobal))
+        {
+            error = "El campo Responsable es obligatorio.";
             return;
         }
 
         guardando = true;
-        error = "";
 
         try
         {
-            var producto = await Context.Productos.FindAsync(form.ProductoId);
-            if (producto == null)
+            // Combinar Responsable y Observaciones para guardarlo en la BD
+            string infoFinal = $"Responsable: {responsableGlobal}";
+            if (!string.IsNullOrWhiteSpace(observacionesGlobal))
             {
-                error = "Producto no encontrado";
-                return;
+                infoFinal += $" | Nota: {observacionesGlobal}";
             }
 
-            if (form.Tipo == "Salida" && producto.Stock < form.Cantidad)
+            foreach (var mov in listaMovimientosTemp)
             {
-                error = $"Stock insuficiente. Disponible: {producto.Stock}";
-                return;
+                mov.Observaciones = infoFinal;
+                mov.Fecha = DateTime.Now;
+
+                // Actualizar Stock
+                var productoBD = await Context.Productos.FindAsync(mov.ProductoId);
+                if (productoBD != null)
+                {
+                    if (mov.Tipo == "Entrada")
+                        productoBD.Stock += mov.Cantidad;
+                    else
+                        productoBD.Stock -= mov.Cantidad;
+                }
+
+                Context.Movimientos.Add(mov);
             }
 
-            if (form.Tipo == "Entrada")
-            {
-                producto.Stock += form.Cantidad;
-            }
-            else if (form.Tipo == "Salida")
-            {
-                producto.Stock -= form.Cantidad;
-            }
-
-            Context.Movimientos.Add(form);
             await Context.SaveChangesAsync();
-
             await Cargar();
             CerrarModal();
-            await JS.InvokeVoidAsync("alert", "✅ Movimiento registrado correctamente");
+            await DialogRef.ShowSuccessAsync("Movimientos registrados", "Los movimientos se registraron correctamente");
         }
         catch (Exception ex)
         {
-            error = $"Error: {ex.Message}";
+            error = $"Error al guardar: {ex.Message}";
         }
         finally
         {
@@ -703,7 +416,12 @@
 
     private async Task Eliminar(Movimiento m)
     {
-        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Eliminar movimiento '{m.Referencia}'?");
+        bool ok = await DialogRef.ShowConfirmAsync(
+            "Revertir Movimiento",
+            $"¿Revertir este movimiento de '{m.Producto?.Nombre}'? Se restaurará el stock.",
+            "Revertir",
+            "↩️"
+        );
         if (ok)
         {
             try
@@ -711,24 +429,21 @@
                 var producto = await Context.Productos.FindAsync(m.ProductoId);
                 if (producto != null)
                 {
+                    // Revertir operación
                     if (m.Tipo == "Entrada")
-                    {
                         producto.Stock -= m.Cantidad;
-                    }
-                    else if (m.Tipo == "Salida")
-                    {
+                    else
                         producto.Stock += m.Cantidad;
-                    }
                 }
 
                 Context.Movimientos.Remove(m);
                 await Context.SaveChangesAsync();
                 await Cargar();
-                await JS.InvokeVoidAsync("alert", "✅ Movimiento eliminado");
+                await DialogRef.ShowSuccessAsync("Movimiento revertido", "El movimiento se revertió correctamente");
             }
             catch (Exception ex)
             {
-                await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+                await DialogRef.ShowErrorAsync("Error", $"Error al revertir: {ex.Message}");
             }
         }
     }
@@ -736,12 +451,414 @@
     private void CerrarModal()
     {
         mostrarModal = false;
-        form = new();
-        error = "";
-    }
-
-    private string GenerarReferencia()
-    {
-        return $"MOV-{DateTime.Now:yyyyMMddHHmmss}";
     }
 }
+
+<style>
+    .movimientos-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        border-bottom: 3px solid #1414b8;
+        padding-bottom: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #1e293b;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #1414b8, #0d47a1);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+    /* Stats */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card-entrada, .stat-card-salida, .stat-card-total {
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .stat-card-entrada {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .stat-card-salida {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .stat-card-total {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    /* Tabla */
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .table-header {
+        background: #f1f5f9;
+        color: #475569;
+        text-align: left;
+    }
+
+        .table-header th {
+            padding: 15px;
+            font-weight: 700;
+        }
+
+    .table-row {
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.2s;
+    }
+
+        .table-row:hover {
+            background: #f8fafc;
+        }
+
+    .table-cell {
+        padding: 12px 15px;
+        vertical-align: middle;
+    }
+
+    .badge-entrada {
+        background: #dcfce7;
+        color: #166534;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .badge-salida {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .badge-cantidad {
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        display: inline-block;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 1.1rem;
+    }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+    .producto-info {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    /* Filtros */
+    .filters-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .search-input, .filter-select {
+        padding: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 10px;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-content {
+        background: white;
+        width: 100%;
+        max-width: 700px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+        color: #1e293b;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+    }
+
+    .modal-body {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+    }
+
+    .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 1rem;
+        outline: none;
+        transition: border 0.2s;
+    }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #1414b8;
+        }
+
+        .form-input.readonly {
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+    .row-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    /* Add Product Box */
+    .add-product-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .btn-add {
+        width: 100%;
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        height: 42px;
+        transition: background 0.2s;
+    }
+
+        .btn-add:hover {
+            background: #059669;
+        }
+
+    /* Temp Table */
+    .temp-list-container {
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .temp-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .temp-table th {
+            background: #f1f5f9;
+            padding: 10px;
+            font-size: 0.85rem;
+            text-align: left;
+            color: #475569;
+        }
+
+        .temp-table td {
+            padding: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+    .btn-sm-danger {
+        padding: 4px 8px;
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+        .btn-sm-danger:hover {
+            background: #fecaca;
+        }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 20px;
+        margin-top: 10px;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: #1414b8;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-save:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .error-message {
+        background: #fef2f2;
+        color: #b91c1c;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #fca5a5;
+        margin-bottom: 15px;
+        font-weight: 500;
+    }
+
+    @@media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .row-2-col {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            width: 100%;
+        }
+    }
+</style>

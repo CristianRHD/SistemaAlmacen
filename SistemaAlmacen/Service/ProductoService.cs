@@ -17,24 +17,14 @@ namespace SistemaAlmacen.Services
         {
             return await _context.Productos
                 .Include(p => p.Categoria)
-                .Include(p => p.Proveedor)
-                .OrderByDescending(p => p.FechaCreacion)
+                .OrderByDescending(p => p.Id)
                 .ToListAsync();
         }
 
         public async Task<List<Categoria>> ObtenerCategoriasAsync()
         {
             return await _context.Categorias
-                .Where(c => c.Activo)
                 .OrderBy(c => c.Nombre)
-                .ToListAsync();
-        }
-
-        public async Task<List<Proveedor>> ObtenerProveedoresAsync()
-        {
-            return await _context.Proveedores
-                .Where(p => p.Activo)
-                .OrderBy(p => p.Nombre)
                 .ToListAsync();
         }
 
@@ -42,7 +32,6 @@ namespace SistemaAlmacen.Services
         {
             return await _context.Productos
                 .Include(p => p.Categoria)
-                .Include(p => p.Proveedor)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -95,20 +84,13 @@ namespace SistemaAlmacen.Services
             }
         }
 
-        public async Task<bool> EliminarAsync(int id)
+        public async Task EliminarAsync(int id)
         {
-            try
+            var producto = await _context.Productos.FindAsync(id);
+            if (producto != null)
             {
-                var producto = await _context.Productos.FindAsync(id);
-                if (producto == null) return false;
-
-                producto.Activo = false;
+                _context.Productos.Remove(producto);
                 await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
             }
         }
     }

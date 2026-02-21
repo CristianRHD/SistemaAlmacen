@@ -17,7 +17,7 @@ namespace SistemaAlmacen.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.21")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -237,9 +237,6 @@ namespace SistemaAlmacen.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Descripcion")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -257,21 +254,18 @@ namespace SistemaAlmacen.Migrations
                         new
                         {
                             Id = 1,
-                            Activo = true,
                             Descripcion = "Productos electrónicos",
                             Nombre = "Electrónica"
                         },
                         new
                         {
                             Id = 2,
-                            Activo = true,
                             Descripcion = "Productos alimenticios",
                             Nombre = "Alimentos"
                         },
                         new
                         {
                             Id = 3,
-                            Activo = true,
                             Descripcion = "Productos de limpieza",
                             Nombre = "Limpieza"
                         });
@@ -291,11 +285,23 @@ namespace SistemaAlmacen.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Nota")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Observaciones")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<decimal>("PrecioCompraMov")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioVentaMov")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProveedorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Referencia")
@@ -308,9 +314,14 @@ namespace SistemaAlmacen.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("UsuarioResponsable")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductoId");
+
+                    b.HasIndex("ProveedorId");
 
                     b.ToTable("Movimientos");
                 });
@@ -479,7 +490,13 @@ namespace SistemaAlmacen.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SistemaAlmacen.Models.Proveedor", "Proveedor")
+                        .WithMany()
+                        .HasForeignKey("ProveedorId");
+
                     b.Navigation("Producto");
+
+                    b.Navigation("Proveedor");
                 });
 
             modelBuilder.Entity("SistemaAlmacen.Models.Producto", b =>

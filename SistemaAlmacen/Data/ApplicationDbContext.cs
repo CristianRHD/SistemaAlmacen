@@ -29,9 +29,9 @@ namespace SistemaAlmacen.Data
 
             // Datos iniciales (Seed Data)
             builder.Entity<Categoria>().HasData(
-                new Categoria { Id = 1, Nombre = "Electrónica", Descripcion = "Productos electrónicos", Activo = true },
-                new Categoria { Id = 2, Nombre = "Alimentos", Descripcion = "Productos alimenticios", Activo = true },
-                new Categoria { Id = 3, Nombre = "Limpieza", Descripcion = "Productos de limpieza", Activo = true }
+                new Categoria { Id = 1, Nombre = "ElectrÃ³nica", Descripcion = "Productos electrÃ³nicos" },
+                new Categoria { Id = 2, Nombre = "Alimentos", Descripcion = "Productos alimenticios" },
+                new Categoria { Id = 3, Nombre = "Limpieza", Descripcion = "Productos de limpieza" }
             );
         }
     }

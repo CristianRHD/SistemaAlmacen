@@ -1,136 +1,144 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
 
 <AuthorizeView>
     <Authorized>
-        <div class="page-layout">
-            <!-- Barra superior -->
-            <header class="top-bar">
-                <div class="top-bar-content">
-                    <div class="logo-section">
+        <div class="app-layout">
+
+            <header class="top-header">
+                <div class="header-start">
+                    <button type="button" class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('show'); document.querySelector('.sidebar-overlay').classList.toggle('show');">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+
+                    <div class="brand-logo">
                         <span class="logo-icon">
-                            <svg width="45" height="45" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="38" height="38" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
-                                    <linearGradient id="gradAlma" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    <linearGradient id="gradAlmaTop" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
                                     </linearGradient>
                                 </defs>
-                                <circle cx="50" cy="50" r="45" fill="url(#gradAlma)" stroke="#fff" stroke-width="4" />
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradAlmaTop)" stroke-width="4" />
                                 <path d="M 50 25 L 65 65 L 58 65 L 55 55 L 45 55 L 42 65 L 35 65 Z" fill="white" stroke="white" stroke-width="2" />
-                                <path d="M 47 50 L 53 50 L 50 40 Z" fill="#667eea" />
+                                <path d="M 47 50 L 53 50 L 50 40 Z" fill="#184ed9" />
                                 <line x1="30" y1="75" x2="70" y2="75" stroke="white" stroke-width="3" stroke-linecap="round" />
                                 <circle cx="30" cy="75" r="4" fill="#4caf50" />
                                 <circle cx="50" cy="75" r="4" fill="#ffc107" />
                                 <circle cx="70" cy="75" r="4" fill="#f44336" />
                             </svg>
                         </span>
-                        <h1>AlmaTrack</h1>
+                        <span class="brand-text">AlmaTrack</span>
                     </div>
+                </div>
 
-                    <div class="user-section">
-                        <div class="user-info">
-                            <div class="user-avatar">
-                                @GetInitials(context.User.Identity?.Name ?? "U")
-                            </div>
-                            <div class="user-details">
-                                <span class="user-name">@context.User.Identity?.Name</span>
-                                <span class="user-role">@GetUserRole(context)</span>
-                            </div>
+                <div class="header-end">
+                    <div class="user-pill">
+                        <div class="avatar">@GetInitials(context.User.Identity?.Name)</div>
+                        <div class="user-data">
+                            <span class="name">@context.User.Identity?.Name</span>
+                            <span class="role">@GetUserRole(context)</span>
                         </div>
-                        <a href="/Account/Logout" class="btn-logout" title="Cerrar sesión">
-                            🚪
-                        </a>
                     </div>
+                    <div class="sep"></div>
+                    <a href="/Account/Logout" class="btn-exit" title="Salir">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    </a>
                 </div>
             </header>
 
-            <!-- Menú lateral -->
-            <nav class="sidebar">
-                <!-- Dashboard - Todos los roles -->
-                <div class="menu-section" style="animation-delay: 0.1s;">
-                    <p class="menu-title">⚡ PRINCIPAL</p>
-                    <a href="/" class="menu-item @GetActiveClass("/")">
-                        <span class="icon">
-                            <svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="5" y="5" width="40" height="40" fill="currentColor" rx="5" />
-                                <rect x="55" y="5" width="40" height="25" fill="currentColor" rx="5" />
-                                <rect x="5" y="55" width="40" height="40" fill="currentColor" rx="5" />
-                                <rect x="55" y="40" width="40" height="55" fill="currentColor" rx="5" />
-                                <circle cx="25" cy="25" r="8" fill="white" opacity="0.3" />
-                                <circle cx="75" cy="17" r="5" fill="white" opacity="0.3" />
-                            </svg>
-                        </span>
-                        <span>Dashboard</span>
-                    </a>
-                </div>
+            <div class="layout-body">
 
-                <!-- Inventario - Admin, Gerente, Empleado, Almacenista -->
-                @if (context.User.IsInRole("Admin") || context.User.IsInRole("Gerente") || context.User.IsInRole("Empleado") || context.User.IsInRole("Almacenista"))
-                {
-                    <div class="menu-section" style="animation-delay: 0.2s;">
-                        <p class="menu-title">📦 INVENTARIO</p>
-                        <a href="/productos" class="menu-item @GetActiveClass("/productos")">
-                            <span class="icon">📦</span>
-                            <span>Productos</span>
-                        </a>
-                        @if (context.User.IsInRole("Admin") || context.User.IsInRole("Gerente") || context.User.IsInRole("Empleado"))
+                <aside class="sidebar" @onclick:stopPropagation="true">
+                    <nav class="nav-menu">
+
+                        <div class="nav-group">
+                            <span class="group-label">PRINCIPAL</span>
+                            <NavLink class="nav-item" href="/" Match="NavLinkMatch.All" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                <span class="icon custom-svg">
+                                    <svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="5" y="5" width="40" height="40" fill="currentColor" rx="5" />
+                                        <rect x="55" y="5" width="40" height="25" fill="currentColor" rx="5" />
+                                        <rect x="5" y="55" width="40" height="40" fill="currentColor" rx="5" />
+                                        <rect x="55" y="40" width="40" height="55" fill="currentColor" rx="5" />
+                                        <circle cx="25" cy="25" r="8" fill="white" opacity="0.3" />
+                                        <circle cx="75" cy="17" r="5" fill="white" opacity="0.3" />
+                                    </svg>
+                                </span>
+                                Dashboard
+                            </NavLink>
+                        </div>
+
+                        @if (CanViewInventory(context))
                         {
-                            <a href="/categorias" class="menu-item @GetActiveClass("/categorias")">
-                                <span class="icon">🏷️</span>
-                                <span>Categorías</span>
-                            </a>
-                            <a href="/proveedores" class="menu-item @GetActiveClass("/proveedores")">
-                                <span class="icon">🚚</span>
-                                <span>Proveedores</span>
-                            </a>
+                            <div class="nav-group">
+                                <span class="group-label">INVENTARIO</span>
+                                <NavLink class="nav-item" href="/productos" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                    <span class="icon">📦</span> Productos
+                                </NavLink>
+                                @if (IsAdminOrManager(context))
+                                {
+                                    <NavLink class="nav-item" href="/categorias" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                        <span class="icon">🏷️</span> Categorías
+                                    </NavLink>
+                                    <NavLink class="nav-item" href="/proveedores" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                        <span class="icon">🚚</span> Proveedores
+                                    </NavLink>
+                                }
+                            </div>
                         }
-                    </div>
-                }
 
-                <!-- Movimientos - Admin, Gerente, Almacenista -->
-                @if (context.User.IsInRole("Admin") || context.User.IsInRole("Gerente") || context.User.IsInRole("Almacenista"))
-                {
-                    <div class="menu-section" style="animation-delay: 0.3s;">
-                        <p class="menu-title">📊 MOVIMIENTOS</p>
-                        <a href="/movimientos" class="menu-item @GetActiveClass("/movimientos")">
-                            <span class="icon">📊</span>
-                            <span>Movimientos</span>
-                        </a>
-                    </div>
-                }
+                        @* SECCIÓN DE GESTIÓN CON DESPLIEGUE SIN ERRORES *@
+                        <div class="nav-group">
+                            <span class="group-label">GESTIÓN</span>
+                            <details class="movimientos-menu">
+                                <summary class="nav-item" style="cursor: pointer; list-style: none; display: flex; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="icon">📊</span> Movimientos
+                                    </div>
+                                    <span class="arrow" style="font-size: 0.8rem;">▼</span>
+                                </summary>
+                                <div class="submenu" style="padding-left: 15px; margin-top: 5px;">
+                                    <NavLink class="nav-item" href="/entrada" style="font-size: 0.9rem; margin-bottom: 2px;">
+                                        <span class="icon" style="font-size: 1rem;">📥</span> Entradas/Inventario
+                                    </NavLink>
+                                    <NavLink class="nav-item" href="/salida" style="font-size: 0.9rem; margin-bottom: 2px;">
+                                        <span class="icon" style="font-size: 1rem;">📤</span> Salidas/Conduce
+                                    </NavLink>
+                                    <NavLink class="nav-item" href="/movimientos" style="font-size: 0.9rem;">
+                                        <span class="icon" style="font-size: 1rem;">📋</span> Historial
+                                    </NavLink>
+                                </div>
+                            </details>
+                        </div>
 
-                <!-- Reportes - Admin, Gerente, Analista -->
-                @if (context.User.IsInRole("Admin") || context.User.IsInRole("Gerente") || context.User.IsInRole("Analista"))
-                {
-                    <div class="menu-section" style="animation-delay: 0.4s;">
-                        <p class="menu-title">📈 ANÁLISIS</p>
-                        <a href="/reportes" class="menu-item @GetActiveClass("/reportes")">
-                            <span class="icon">📈</span>
-                            <span>Reportes</span>
-                        </a>
-                    </div>
-                }
+                        <div class="nav-group">
+                            <span class="group-label">ANÁLISIS</span>
+                            <NavLink class="nav-item" href="/reportes" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                <span class="icon">📈</span> Reportes
+                            </NavLink>
+                        </div>
 
-                <!-- Administración - Solo Admin -->
-                @if (context.User.IsInRole("Admin"))
-                {
-                    <div class="menu-section" style="animation-delay: 0.5s;">
-                        <p class="menu-title">⚙️ ADMINISTRACIÓN</p>
-                        <a href="/usuarios" class="menu-item @GetActiveClass("/usuarios")">
-                            <span class="icon">👥</span>
-                            <span>Usuarios</span>
-                        </a>
-                    </div>
-                }
-            </nav>
+                        @if (context.User.IsInRole("Admin"))
+                        {
+                            <div class="nav-group">
+                                <span class="group-label">ADMINISTRACIÓN</span>
+                                <NavLink class="nav-item" href="/usuarios" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
+                                    <span class="icon">👥</span> Usuarios
+                                </NavLink>
+                            </div>
+                        }
+                    </nav>
+                </aside>
 
-            <!-- Contenido principal -->
-            <main class="main-content">
-                @Body
-            </main>
+                <div class="sidebar-overlay" onclick="this.classList.remove('show'); document.querySelector('.sidebar').classList.remove('show');"></div>
+
+                <main class="main-content">
+                    @Body
+                </main>
+            </div>
         </div>
     </Authorized>
     <NotAuthorized>
@@ -139,37 +147,266 @@
 </AuthorizeView>
 
 @code {
-    private string GetActiveClass(string path)
+    private string GetInitials(string? name)
     {
-        var currentPath = new Uri(Navigation.Uri).AbsolutePath;
-        return currentPath == path ? "active" : "";
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
     }
 
-    private string GetInitials(string nombre)
+    private string GetUserRole(AuthenticationState context)
     {
-        if (string.IsNullOrWhiteSpace(nombre)) return "U";
-
-        var parts = nombre.Split('@')[0].Split('.');
-        if (parts.Length >= 2)
-        {
-            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
-        }
-        return nombre.Substring(0, Math.Min(2, nombre.Length)).ToUpper();
-    }
-
-    private string GetUserRole(AuthenticationState authState)
-    {
-        if (authState.User.IsInRole("Admin"))
-            return "👑 Administrador";
-        if (authState.User.IsInRole("Gerente"))
-            return "👔 Gerente";
-        if (authState.User.IsInRole("Analista"))
-            return "📊 Analista";
-        if (authState.User.IsInRole("Almacenista"))
-            return "📦 Almacenista";
-        if (authState.User.IsInRole("Empleado"))
-            return "👤 Empleado";
-
+        if (context.User.IsInRole("Admin")) return "Administrador";
         return "Usuario";
     }
+
+    private bool CanViewInventory(AuthenticationState c) => true;
+    private bool IsAdminOrManager(AuthenticationState c) => c.User.IsInRole("Admin");
 }
+
+<style>
+    /* Estilos base de tu diseño original */
+    .app-layout {
+        --header-h: 64px;
+        --sidebar-w: 260px;
+        --blue-primary: #184ed9;
+        --blue-gradient: linear-gradient(90deg, #184ed9 0%, #0d47a1 100%);
+        --bg-body: #f3f4f6;
+        --text-sidebar: #4b5563;
+        --active-bg: #eff6ff;
+    }
+
+    .app-layout {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .top-header {
+        height: var(--header-h);
+        background: var(--blue-gradient);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .header-start {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .menu-toggle {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: none;
+        padding: 10px;
+    }
+
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .header-end {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,0.1);
+        padding: 5px 15px 5px 5px;
+        border-radius: 50px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .avatar {
+        width: 36px;
+        height: 36px;
+        background: white;
+        color: var(--blue-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .user-data {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+
+    .name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .role {
+        font-size: 0.7rem;
+        opacity: 0.9;
+    }
+
+    .sep {
+        width: 1px;
+        height: 25px;
+        background: rgba(255,255,255,0.3);
+    }
+
+    .btn-exit {
+        color: white;
+        opacity: 0.8;
+        transition: 0.2s;
+    }
+
+    .btn-exit:hover {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    .layout-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* SIDEBAR CORREGIDO - AHORA LLEGA HASTA ABAJO */
+    .sidebar {
+        width: var(--sidebar-w);
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease;
+        z-index: 50;
+        height: 100%;
+        flex-shrink: 0;
+    }
+
+    .nav-menu {
+        padding: 25px 15px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nav-group {
+        margin-bottom: 25px;
+    }
+
+    .group-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #9ca3af;
+        margin: 0 0 10px 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        color: var(--text-sidebar);
+        text-decoration: none;
+        border-radius: 10px;
+        margin-bottom: 5px;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .icon {
+        margin-right: 12px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        width: 24px;
+        justify-content: center;
+    }
+
+    .nav-item.active {
+        background-color: var(--active-bg);
+        color: var(--blue-primary);
+        border-left: 4px solid #f59e0b;
+    }
+
+    .nav-item:hover:not(.active) {
+        background-color: #f3f4f6;
+        color: #111827;
+    }
+
+    .movimientos-menu[open] .arrow {
+        transform: rotate(180deg);
+    }
+
+    .main-content {
+        flex: 1;
+        background-color: var(--bg-body);
+        overflow-y: auto;
+        padding: 25px;
+    }
+
+    @@media (max-width: 768px) {
+        .menu-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-data,
+        .sep {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: var(--header-h);
+            left: 0;
+            bottom: 0;
+            height: calc(100vh - var(--header-h));
+            transform: translateX(-100%);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            z-index: 999;
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            position: fixed;
+            top: var(--header-h);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+            opacity: 1;
+        }
+    }
+</style>

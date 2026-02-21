@@ -14,8 +14,6 @@ namespace SistemaAlmacen.Models
         [StringLength(500)]
         public string? Descripcion { get; set; }
 
-        public bool Activo { get; set; } = true;
-
         public ICollection<Producto> Productos { get; set; } = new List<Producto>();
     }
 }

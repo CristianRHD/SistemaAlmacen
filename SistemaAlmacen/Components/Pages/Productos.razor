@@ -9,14 +9,15 @@
 @using CategoriaModel = SistemaAlmacen.Models.Categoria
 @inject ProductoService ProductoService
 @inject ApplicationDbContext Context
-@inject IJSRuntime JS
+
+<DialogModal @ref="DialogRef" />
 
 <PageTitle>Productos - AlmaTrack</PageTitle>
 
 <div class="productos-container">
 
     <div class="productos-header">
-        <h1 class="productos-titulo">📦 Gestión de Productos</h1>
+        <h1 class="productos-titulo">📦 Gestión de Nuevos Productos</h1>
         <button @onclick="AbrirModalNuevo" class="btn-nuevo">
             ➕ Nuevo Producto
         </button>
@@ -64,35 +65,39 @@
                         @foreach (var p in Filtrados)
                         {
                             <tr class="tabla-fila">
-                                <td class="tabla-td"><strong class="tabla-codigo">@p.Codigo</strong></td>
-                                <td class="tabla-td tabla-nombre">@p.Nombre</td>
-                                <td class="tabla-td">
+                                <td class="tabla-td" data-label="Código">
+                                    <strong class="tabla-codigo">@p.Codigo</strong>
+                                </td>
+                                <td class="tabla-td" data-label="Nombre">
+                                    <span class="tabla-nombre">@p.Nombre</span>
+                                </td>
+                                <td class="tabla-td" data-label="Categoría">
                                     <span class="badge-categoria">
                                         @(p.Categoria?.Nombre ?? "Sin categoría")
                                     </span>
                                 </td>
-                                <td class="tabla-td">
+                                <td class="tabla-td" data-label="Stock">
                                     <span class="badge-stock" style="@GetColorStock(p)">
                                         @p.Stock @p.Unidad
                                     </span>
                                 </td>
-                                <td class="tabla-td tabla-nombre">@FormatearMoneda(p.PrecioCompra)</td>
-                                <td class="tabla-td tabla-nombre">@FormatearMoneda(p.PrecioVenta)</td>
-                                <td class="tabla-td">
+                                <td class="tabla-td" data-label="P. Compra">
+                                    <span>@FormatearMoneda(p.PrecioCompra)</span>
+                                </td>
+                                <td class="tabla-td" data-label="P. Venta">
+                                    <span>@FormatearMoneda(p.PrecioVenta)</span>
+                                </td>
+                                <td class="tabla-td" data-label="Estado">
                                     @if (p.Activo)
                                     {
-                                        <span class="badge-activo">
-                                            ✅ Activo
-                                        </span>
+                                        <span class="badge-activo">✅ Activo</span>
                                     }
                                     else
                                     {
-                                        <span class="badge-inactivo">
-                                            ❌ Inactivo
-                                        </span>
+                                        <span class="badge-inactivo">❌ Inactivo</span>
                                     }
                                 </td>
-                                <td class="tabla-td">
+                                <td class="tabla-td" data-label="Acciones">
                                     <div class="acciones-container">
                                         <button @onclick="() => VerDetalle(p)" title="Ver detalles" class="btn-accion btn-ver">
                                             👁️
@@ -270,8 +275,8 @@
         </div>
     </div>
 }
-<style>
 
+<style>
     .productos-container {
         width: 100%;
         max-width: 100%;
@@ -399,9 +404,9 @@
         transition: background-color 0.2s;
     }
 
-        .tabla-fila:hover {
-            background-color: #f8f9fa;
-        }
+    .tabla-fila:hover {
+        background-color: #f8f9fa;
+    }
 
     .tabla-td {
         padding: 15px;
@@ -555,33 +560,46 @@
         padding: 25px;
     }
 
-    /* Formulario */
+    /* FORMULARIO MEJORADO */
     .form-group {
         margin-bottom: 20px;
     }
 
     .form-label {
         display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #2d3748;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: #1a202c;
+        font-size: 1.05rem;
     }
 
     .form-input, .form-select {
         width: 100%;
-        padding: 10px 15px;
+        padding: 12px 16px;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
-        font-size: 1rem;
+        font-size: 1.05rem;
+        color: #1a202c;
+        font-weight: 500;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
+                    0 1px 2px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
     }
 
     .form-textarea {
         width: 100%;
-        padding: 10px 15px;
+        padding: 12px 16px;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
-        font-size: 1rem;
+        font-size: 1.05rem;
+        color: #1a202c;
+        font-weight: 500;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
+                    0 1px 2px rgba(0, 0, 0, 0.06);
         resize: vertical;
+        transition: all 0.2s ease;
     }
 
     .form-grid {
@@ -609,8 +627,9 @@
     }
 
     .checkbox-text {
-        font-weight: 600;
-        color: #2d3748;
+        font-weight: 700;
+        color: #1a202c;
+        font-size: 1.05rem;
     }
 
     .error-mensaje {
@@ -620,6 +639,7 @@
         background: #ffebee;
         color: #c62828;
         border: 1px solid #ef5350;
+        font-weight: 600;
     }
 
     .modal-footer, .detalle-footer {
@@ -683,10 +703,12 @@
 
     .detalle-label {
         color: #2196f3;
+        font-weight: 700;
     }
 
     .detalle-valor {
-        color: #2d3748;
+        color: #1a202c;
+        font-weight: 600;
     }
 
     .detalle-footer {
@@ -697,7 +719,8 @@
     input:focus, textarea:focus, select:focus {
         outline: none;
         border-color: #2196f3 !important;
-        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15), 
+                    0 2px 4px rgba(0, 0, 0, 0.08) !important;
     }
 
     button:hover:not(:disabled) {
@@ -708,8 +731,238 @@
     button:active:not(:disabled) {
         transform: translateY(0);
     }
-</style>
 
+    input::placeholder,
+    textarea::placeholder {
+        color: #718096;
+        font-weight: 400;
+    }
+
+    /* ============================================ */
+    /* RESPONSIVE - DISEÑO MÓVIL */
+    /* ============================================ */
+    @@media (max-width: 768px) {
+        .productos-container {
+            padding: 15px;
+        }
+
+        .productos-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+            padding-bottom: 15px;
+        }
+
+        .productos-titulo {
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .btn-nuevo {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1rem;
+        }
+
+        .input-busqueda {
+            font-size: 0.95rem;
+            padding: 10px 15px;
+        }
+
+        /* TABLA COMO TARJETAS EN MÓVIL */
+        .tabla-wrapper {
+            overflow: visible;
+        }
+
+        .tabla-productos {
+            display: block;
+            min-width: auto;
+        }
+
+        .tabla-head {
+            display: none;
+        }
+
+        .tabla-productos tbody {
+            display: block;
+        }
+
+        .tabla-fila {
+            display: block;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .tabla-fila:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .tabla-td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border: none;
+        }
+
+        .tabla-td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: #4b5563;
+            font-size: 0.85rem;
+            flex: 0 0 100px;
+        }
+
+        .tabla-td:first-child {
+            padding-top: 0;
+        }
+
+        .tabla-td:last-child {
+            padding-bottom: 0;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .tabla-td:last-child::before {
+            margin-bottom: 10px;
+        }
+
+        .tabla-codigo {
+            font-size: 1rem;
+        }
+
+        .tabla-nombre {
+            font-size: 0.95rem;
+        }
+
+        .badge-categoria,
+        .badge-stock,
+        .badge-activo,
+        .badge-inactivo {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .acciones-container {
+            width: 100%;
+            gap: 8px;
+        }
+
+        .btn-accion {
+            flex: 1;
+            padding: 10px;
+            font-size: 1.2rem;
+        }
+
+        .tabla-footer {
+            text-align: center;
+        }
+
+        /* Modal responsive */
+        .modal-contenido,
+        .modal-detalle {
+            width: 95%;
+            max-height: 85vh;
+            margin: 10px;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+        }
+
+        .modal-titulo,
+        .modal-titulo-detalle {
+            font-size: 1.2rem;
+        }
+
+        .modal-body,
+        .detalle-body {
+            padding: 20px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        .form-label {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            font-size: 1rem;
+            padding: 10px 14px;
+        }
+
+        .modal-footer,
+        .detalle-footer {
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+
+        .btn-cancelar,
+        .btn-guardar,
+        .btn-editar-detalle {
+            width: 100%;
+            padding: 12px 20px;
+        }
+
+        .detalle-item {
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+
+        .detalle-label {
+            font-size: 0.9rem;
+        }
+
+        .detalle-valor {
+            font-size: 0.95rem;
+        }
+
+        .vacio-container,
+        .cargando-container {
+            padding: 40px 15px;
+        }
+
+        .vacio-icono {
+            font-size: 3.5rem;
+        }
+
+        .vacio-titulo {
+            font-size: 1.2rem;
+        }
+
+        .btn-agregar {
+            width: 100%;
+            padding: 12px 20px;
+        }
+    }
+
+    @@media (min-width: 769px) and (max-width: 1024px) {
+        .productos-container {
+            padding: 20px 15px;
+        }
+
+        .tabla-th,
+        .tabla-td {
+            padding: 12px 10px;
+            font-size: 0.9rem;
+        }
+
+        .form-grid {
+            gap: 15px;
+        }
+    }
+</style>
 
 @code {
     private List<Producto> productos = new();
@@ -723,8 +976,8 @@
     private bool mostrarDetalle = false;
     private bool esEdicion = false;
     private bool guardando = false;
+    private DialogModal DialogRef;
 
-    // Configuración de moneda - Cambia aquí: "$", "RD$", "USD$", "€", "£", etc.
     private string simboloMoneda = "RD$";
 
     private List<Producto> Filtrados =>
@@ -745,7 +998,6 @@
         cargando = true;
         productos = await ProductoService.ObtenerTodosAsync();
         categorias = await Context.Categorias
-            .Where(c => c.Activo)
             .OrderBy(c => c.Nombre)
             .ToListAsync();
         cargando = false;
@@ -813,7 +1065,10 @@
             {
                 await Cargar();
                 CerrarModal();
-                await JS.InvokeVoidAsync("alert", esEdicion ? "✅ Producto actualizado" : "✅ Producto agregado");
+                await DialogRef.ShowSuccessAsync(
+                    esEdicion ? "Producto actualizado" : "Producto agregado",
+                    esEdicion ? "El producto se actualizó correctamente" : "El producto se agregó correctamente"
+                );
             }
             else
             {
@@ -832,12 +1087,17 @@
 
     private async Task Eliminar(Producto p)
     {
-        bool ok = await JS.InvokeAsync<bool>("confirm", $"¿Eliminar '{p.Nombre}'?");
+        bool ok = await DialogRef.ShowConfirmAsync(
+            "Eliminar Producto",
+            $"¿Está seguro de que desea eliminar '{p.Nombre}'? Esta acción no se puede deshacer.",
+            "Eliminar",
+            "🗑️"
+        );
         if (ok)
         {
             await ProductoService.EliminarAsync(p.Id);
             await Cargar();
-            await JS.InvokeVoidAsync("alert", "✅ Eliminado");
+            await DialogRef.ShowSuccessAsync("Producto eliminado", "El producto se eliminó correctamente");
         }
     }
 

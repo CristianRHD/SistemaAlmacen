@@ -15,7 +15,6 @@ namespace SistemaAlmacen.Services
             _roleManager = roleManager;
         }
 
-        // Lista de roles disponibles
         public List<RolInfo> ObtenerRolesDisponibles()
         {
             return new List<RolInfo>
@@ -99,7 +98,6 @@ namespace SistemaAlmacen.Services
         {
             try
             {
-                // Validar que no exista el usuario
                 var existeUsuario = await _userManager.FindByNameAsync(userName);
                 if (existeUsuario != null)
                 {
@@ -112,13 +110,11 @@ namespace SistemaAlmacen.Services
                     return (false, "El email ya está registrado", null);
                 }
 
-                // Validar que el rol existe
                 if (!await _roleManager.RoleExistsAsync(rol))
                 {
                     return (false, "El rol seleccionado no existe", null);
                 }
 
-                // Crear el usuario
                 var nuevoUsuario = new ApplicationUser
                 {
                     UserName = userName,
@@ -136,7 +132,6 @@ namespace SistemaAlmacen.Services
                     return (false, $"Error al crear usuario: {errores}", null);
                 }
 
-                // Asignar rol
                 await _userManager.AddToRoleAsync(nuevoUsuario, rol);
 
                 return (true, "Usuario creado exitosamente", nuevoUsuario.Id);
@@ -157,7 +152,6 @@ namespace SistemaAlmacen.Services
                     return (false, "Usuario no encontrado");
                 }
 
-                // Validar userName único
                 var existeUsuario = await _userManager.Users
                     .AnyAsync(u => u.UserName == userName && u.Id != userId);
                 if (existeUsuario)
@@ -165,7 +159,6 @@ namespace SistemaAlmacen.Services
                     return (false, "El nombre de usuario ya existe");
                 }
 
-                // Validar email único
                 var existeEmail = await _userManager.Users
                     .AnyAsync(u => u.Email == email && u.Id != userId);
                 if (existeEmail)
@@ -173,7 +166,6 @@ namespace SistemaAlmacen.Services
                     return (false, "El email ya está registrado");
                 }
 
-                // Actualizar datos
                 usuario.UserName = userName;
                 usuario.Email = email;
                 usuario.NombreCompleto = nombreCompleto;
@@ -185,7 +177,6 @@ namespace SistemaAlmacen.Services
                     return (false, $"Error al actualizar: {errores}");
                 }
 
-                // Actualizar rol
                 var rolesActuales = await _userManager.GetRolesAsync(usuario);
                 if (rolesActuales.Any())
                 {
@@ -193,7 +184,6 @@ namespace SistemaAlmacen.Services
                 }
                 await _userManager.AddToRoleAsync(usuario, rol);
 
-                // Cambiar contraseña si se proporcionó una nueva
                 if (!string.IsNullOrWhiteSpace(nuevaPassword))
                 {
                     var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
@@ -224,7 +214,6 @@ namespace SistemaAlmacen.Services
                     return (false, "Usuario no encontrado");
                 }
 
-                // No permitir eliminar al admin principal
                 if (usuario.UserName == "admin")
                 {
                     return (false, "No se puede eliminar el usuario administrador");
@@ -266,16 +255,13 @@ namespace SistemaAlmacen.Services
                     return (false, "No se puede desactivar el usuario administrador");
                 }
 
-                // Cambiar estado de bloqueo
                 if (usuario.LockoutEnd == null || usuario.LockoutEnd <= DateTimeOffset.Now)
                 {
-                    // Bloquear usuario
                     await _userManager.SetLockoutEndDateAsync(usuario, DateTimeOffset.MaxValue);
                     return (true, "Usuario bloqueado");
                 }
                 else
                 {
-                    // Desbloquear usuario
                     await _userManager.SetLockoutEndDateAsync(usuario, null);
                     return (true, "Usuario desbloqueado");
                 }

@@ -1,0 +1,8 @@
+
+@page "/salida"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Gerente,Almacenista")]
+
+<PageTitle>Salidas</PageTitle>
+<h2>Salidas de Almacén</h2>
+<!-- Aquí va la lógica y UI para las salidas -->

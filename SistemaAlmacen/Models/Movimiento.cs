@@ -29,5 +29,22 @@ namespace SistemaAlmacen.Models
 
         [StringLength(500)]
         public string? Observaciones { get; set; }
+
+      
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PrecioCompraMov { get; set; } 
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PrecioVentaMov { get; set; } 
+
+        public int? ProveedorId { get; set; } 
+
+        [ForeignKey("ProveedorId")]
+        public Proveedor? Proveedor { get; set; }
+
+        public string? Nota { get; set; } 
+        
+        public string? UsuarioResponsable { get; set; } 
     }
 }

@@ -1,69 +1,61 @@
-﻿@page "/categorias"
+@page "/categorias"
 @attribute [Authorize(Roles = "Admin,Gerente,Analista")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using SistemaAlmacen.Models
 @using SistemaAlmacen.Services
 @inject CategoriaService CategoriaService
-@inject IJSRuntime JS
 
 <PageTitle>Categorías - AlmaTrack</PageTitle>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #ff9800;">
-        <h1 style="margin: 0; font-size: 2rem;">🏷️ Gestión de Categorías</h1>
-        <button @onclick="AbrirModalNueva" style="background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+<DialogModal @ref="DialogRef" />
+
+<div class="categorias-container">
+    <div class="categorias-header">
+        <h1 class="categorias-titulo">🏷️ Gestión de Categorías</h1>
+        <button @onclick="AbrirModalNueva" class="btn-nueva">
             ➕ Nueva Categoría
         </button>
     </div>
 
     @if (cargando)
     {
-        <div style="text-align: center; padding: 60px; background: white; border-radius: 12px;">
-            <p style="font-size: 1.2rem;">⏳ Cargando categorías...</p>
+        <div class="cargando-container">
+            <p class="cargando-texto">⏳ Cargando categorías...</p>
         </div>
     }
     else if (!categorias.Any())
     {
-        <div style="text-align: center; padding: 80px 20px; background: white; border-radius: 12px;">
-            <div style="font-size: 5rem; margin-bottom: 20px;">🏷️</div>
-            <h3 style="font-size: 1.5rem; margin-bottom: 10px;">No hay categorías registradas</h3>
-            <p style="color: #666; margin-bottom: 30px;">Comienza agregando tu primera categoría</p>
-            <button @onclick="AbrirModalNueva" style="background: #ff9800; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
+        <div class="vacio-container">
+            <div class="vacio-icono">🏷️</div>
+            <h3 class="vacio-titulo">No hay categorías registradas</h3>
+            <p class="vacio-texto">Comienza agregando tu primera categoría</p>
+            <button @onclick="AbrirModalNueva" class="btn-agregar">
                 ➕ Agregar Categoría
             </button>
         </div>
     }
     else
     {
-        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar categoría..."
-               style="width: 100%; padding: 12px 20px; margin-bottom: 20px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;" />
+        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar categoría..." class="input-busqueda" />
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        <div class="categorias-grid">
             @foreach (var cat in Filtradas)
             {
-                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid #ff9800;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                        <h3 style="margin: 0; font-size: 1.3rem; color: #333;">@cat.Nombre</h3>
-                        @if (cat.Activo)
-                        {
-                            <span style="padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #4caf50; color: white;">✅ Activa</span>
-                        }
-                        else
-                        {
-                            <span style="padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #f44336; color: white;">❌ Inactiva</span>
-                        }
+                <div class="categoria-card">
+                    <div class="card-header">
+                        <h3 class="card-titulo">@cat.Nombre</h3>
                     </div>
 
-                    <p style="color: #666; margin-bottom: 15px; min-height: 40px;">
+                    <p class="card-descripcion">
                         @(string.IsNullOrWhiteSpace(cat.Descripcion) ? "Sin descripción" : cat.Descripcion)
                     </p>
 
-                    <div style="display: flex; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-                        <button @onclick="() => Editar(cat)" style="flex: 1; padding: 8px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <div class="card-acciones">
+                        <button @onclick="() => Editar(cat)" class="btn-editar">
                             ✏️ Editar
                         </button>
-                        <button @onclick="() => Eliminar(cat)" style="flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        <button @onclick="() => Eliminar(cat)" class="btn-eliminar">
                             🗑️ Eliminar
                         </button>
                     </div>
@@ -75,45 +67,36 @@
 
 @if (mostrarModal)
 {
-    <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CerrarModal">
-        <div style="background: white; border-radius: 15px; width: 90%; max-width: 500px;" @onclick:stopPropagation>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #f0f0f0;">
-                <h3 style="margin: 0; font-size: 1.5rem;">@(esEdicion ? "✏️ Editar" : "➕ Nueva") Categoría</h3>
-                <button @onclick="CerrarModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">×</button>
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-contenido" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar" : "➕ Nueva") Categoría</h3>
+                <button @onclick="CerrarModal" class="modal-cerrar">×</button>
             </div>
 
-            <div style="padding: 25px;">
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nombre *</label>
-                    <input type="text" @bind="form.Nombre" placeholder="Ej: Electrónica, Alimentos, etc."
-                           style="width: 100%; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;" />
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" @bind="form.Nombre" placeholder="Ej: Electrónica, Alimentos, etc." class="form-input" />
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Descripción</label>
-                    <textarea @bind="form.Descripcion" rows="4" placeholder="Descripción de la categoría..."
-                              style="width: 100%; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" @bind="form.Activo" style="width: 20px; height: 20px;" />
-                        <span style="font-weight: 600;">Categoría activa</span>
-                    </label>
+                <div class="form-group">
+                    <label class="form-label">Descripción</label>
+                    <textarea @bind="form.Descripcion" rows="4" placeholder="Descripción de la categoría..." class="form-textarea"></textarea>
                 </div>
 
                 @if (!string.IsNullOrEmpty(error))
                 {
-                    <div style="padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; background: #ffebee; color: #c62828; border: 1px solid #ef5350;">
+                    <div class="error-mensaje">
                         ❌ @error
                     </div>
                 }
 
-                <div style="display: flex; justify-content: flex-end; gap: 15px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
-                    <button type="button" @onclick="CerrarModal" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <div class="modal-footer">
+                    <button type="button" @onclick="CerrarModal" class="btn-cancelar">
                         Cancelar
                     </button>
-                    <button type="button" @onclick="Guardar" disabled="@guardando" style="background: #ff9800; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <button type="button" @onclick="Guardar" disabled="@guardando" class="btn-guardar">
                         @(guardando ? "⏳ Guardando..." : "💾 Guardar")
                     </button>
                 </div>
@@ -121,6 +104,384 @@
         </div>
     </div>
 }
+
+<style>
+    .categorias-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Header */
+    .categorias-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #2196f3;
+    }
+
+    .categorias-titulo {
+        margin: 0;
+        font-size: 2rem;
+        color: #2d3748;
+    }
+
+    .btn-nueva {
+        background: linear-gradient(135deg, #2196f3, #1976d2);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .btn-nueva:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    }
+
+    /* Estados de carga y vacío */
+    .cargando-container {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .cargando-texto {
+        font-size: 1.2rem;
+        color: #718096;
+    }
+
+    .vacio-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .vacio-icono {
+        font-size: 5rem;
+        margin-bottom: 20px;
+    }
+
+    .vacio-titulo {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #2d3748;
+    }
+
+    .vacio-texto {
+        color: #718096;
+        margin-bottom: 30px;
+    }
+
+    .btn-agregar {
+        background: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-agregar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    }
+
+    /* Búsqueda */
+    .input-busqueda {
+        width: 100%;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .input-busqueda:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+    }
+
+    /* Grid de categorías */
+    .categorias-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .categoria-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 5px solid #2196f3;
+        transition: all 0.3s;
+    }
+
+    .categoria-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.2);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .card-titulo {
+        margin: 0;
+        font-size: 1.3rem;
+        color: #1a202c;
+        font-weight: 700;
+    }
+
+    .card-descripcion {
+        color: #4a5568;
+        margin-bottom: 15px;
+        min-height: 40px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .card-acciones {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-editar {
+        flex: 1;
+        padding: 10px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-editar:hover {
+        background: #1976d2;
+        transform: translateY(-1px);
+    }
+
+    .btn-eliminar {
+        flex: 1;
+        padding: 10px;
+        background: #f44336;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-eliminar:hover {
+        background: #d32f2f;
+        transform: translateY(-1px);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-contenido {
+        background: white;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 25px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modal-titulo {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2d3748;
+    }
+
+    .modal-cerrar {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: #718096;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+
+    .modal-cerrar:hover {
+        color: #1a202c;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    /* ============================================ */
+    /* FORMULARIO MEJORADO - LETRAS MÁS GRANDES Y NEGRAS, SOMBRA EN INPUTS */
+    /* ============================================ */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: #1a202c;
+        font-size: 1.05rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        color: #1a202c;
+        font-weight: 500;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
+                    0 1px 2px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        color: #1a202c;
+        font-weight: 500;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
+                    0 1px 2px rgba(0, 0, 0, 0.06);
+        resize: vertical;
+        transition: all 0.2s ease;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15), 
+                    0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: #718096;
+        font-weight: 400;
+    }
+
+    .error-mensaje {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef5350;
+        font-weight: 600;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .btn-cancelar {
+        background: #6c757d;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancelar:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    .btn-guardar {
+        background: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-guardar:hover:not(:disabled) {
+        background: #1976d2;
+        transform: translateY(-1px);
+    }
+
+    .btn-guardar:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .categorias-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .categorias-titulo {
+            font-size: 1.5rem;
+        }
+
+        .categorias-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 
 @code {
     private List<Categoria> categorias = new();
@@ -131,6 +492,7 @@
     private bool mostrarModal = false;
     private bool esEdicion = false;
     private bool guardando = false;
+    private DialogModal DialogRef;
 
     private List<Categoria> Filtradas =>
         string.IsNullOrWhiteSpace(busqueda)
@@ -151,7 +513,7 @@
 
     private void AbrirModalNueva()
     {
-        form = new Categoria { Activo = true };
+        form = new Categoria();
         esEdicion = false;
         error = "";
         mostrarModal = true;
@@ -163,8 +525,7 @@
         {
             Id = c.Id,
             Nombre = c.Nombre,
-            Descripcion = c.Descripcion,
-            Activo = c.Activo
+            Descripcion = c.Descripcion
         };
         esEdicion = true;
         error = "";
@@ -192,7 +553,10 @@
             {
                 await Cargar();
                 CerrarModal();
-                await JS.InvokeVoidAsync("alert", esEdicion ? "✅ Categoría actualizada" : "✅ Categoría agregada");
+                await DialogRef.ShowSuccessAsync(
+                    esEdicion ? "Categoría actualizada" : "Categoría agregada",
+                    esEdicion ? "La categoría se actualizó correctamente" : "La categoría se agregó correctamente"
+                );
             }
             else
             {
@@ -211,19 +575,18 @@
 
     private async Task Eliminar(Categoria c)
     {
-        var cantidadProductos = await CategoriaService.ContarProductosAsync(c.Id);
-
-        string mensaje = cantidadProductos > 0
-            ? $"La categoría '{c.Nombre}' tiene {cantidadProductos} producto(s) asociado(s).\n\n¿Desea desactivarla?"
-            : $"¿Eliminar la categoría '{c.Nombre}'?";
-
-        bool ok = await JS.InvokeAsync<bool>("confirm", mensaje);
+        bool ok = await DialogRef.ShowConfirmAsync(
+            "Eliminar Categoría",
+            $"¿Está seguro de que desea eliminar la categoría '{c.Nombre}'? Esta acción no se puede deshacer.",
+            "Eliminar",
+            "🗑️"
+        );
 
         if (ok)
         {
             await CategoriaService.EliminarAsync(c.Id);
             await Cargar();
-            await JS.InvokeVoidAsync("alert", "✅ Categoría eliminada");
+            await DialogRef.ShowSuccessAsync("Categoría eliminada", "La categoría se eliminó correctamente");
         }
     }
 

@@ -10,121 +10,79 @@
 
 <PageTitle>Iniciar Sesión - AlmaTrack</PageTitle>
 
-<div class="login-container">
-    <div class="login-card">
-        <!-- Logo y título con SVG mejorado -->
-        <div class="brand-header">
-            <div class="brand-icon">
-                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                        </linearGradient>
-                        <filter id="shadow">
-                            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3" />
-                        </filter>
-                    </defs>
-                    <circle cx="50" cy="50" r="45" fill="url(#logoGrad)" filter="url(#shadow)" />
-                    <path d="M 50 25 L 65 65 L 58 65 L 55 55 L 45 55 L 42 65 L 35 65 Z" fill="white" />
-                    <path d="M 47 50 L 53 50 L 50 40 Z" fill="rgba(102, 126, 234, 0.5)" />
-                    <line x1="30" y1="75" x2="70" y2="75" stroke="white" stroke-width="3" stroke-linecap="round" />
-                    <circle cx="30" cy="75" r="4" fill="#4caf50" />
-                    <circle cx="50" cy="75" r="4" fill="#ffc107" />
-                    <circle cx="70" cy="75" r="4" fill="#f44336" />
+<div class="main-container">
+    
+    <div class="brand-side">
+        <div class="brand-content">
+            
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
             </div>
-            <h1>AlmaTrack</h1>
-            <p class="brand-subtitle">Sistema de Gestión de Inventario Inteligente</p>
+
+            <h1>Sistema Almacén</h1>
+            
+            <p class="brand-slogan">Control integral de inventario y logística inteligente.</p>
         </div>
+        
+        <div class="brand-overlay"></div>
+    </div>
 
-        <!-- Encabezado del formulario -->
-        <div class="form-header">
-            <h2>¡Bienvenido de nuevo! </h2>
-            <p>Ingresa tus credenciales para continuar</p>
-        </div>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>@errorMessage</span>
-            </div>
-        }
-
-        <!-- Formulario -->
-        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" autocomplete="off">
-            <DataAnnotationsValidator />
-
-            <div class="form-group">
-                <label for="username" class="form-label">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Usuario
-                </label>
-                <InputText @bind-Value="Input.UserName"
-                           class="form-input"
-                           id="username"
-                           autocomplete="off"
-                           aria-required="true"
-                           placeholder="Ingresa tu usuario" />
-                <ValidationMessage For="() => Input.UserName" class="validation-error" />
+    <div class="form-side">
+        <div class="form-wrapper">
+            <div class="form-header">
+                <h2>Bienvenido</h2>
+                <p>Ingresa tus credenciales para acceder</p>
             </div>
 
-            <div class="form-group">
-                <label for="password" class="form-label">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    Contraseña
-                </label>
-                <InputText type="password"
-                           @bind-Value="Input.Password"
-                           class="form-input"
-                           id="password"
-                           autocomplete="new-password"
-                           placeholder="••••••••" />
-                <ValidationMessage For="() => Input.Password" class="validation-error" />
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    <span>@errorMessage</span>
+                </div>
+            }
+
+            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" autocomplete="off">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <InputText @bind-Value="Input.UserName" class="form-control" placeholder="Ej. admin" />
+                    <ValidationMessage For="() => Input.UserName" class="text-danger" />
+                </div>
+
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" placeholder="••••••••" />
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                </div>
+
+                <div class="form-check">
+                    <label class="check-label">
+                        <input type="checkbox" @bind="Input.RememberMe" />
+                        <span>Recordarme en este equipo</span>
+                    </label>
+                    <a href="Account/ForgotPassword" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="btn-primary" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner"></span> <span>Entrando...</span>
+                    }
+                    else
+                    {
+                        <span>Iniciar Sesión</span>
+                    }
+                </button>
+            </EditForm>
+
+            <div class="footer-copy">
+                &copy; @DateTime.Now.Year SistemaAlmacen v1.0
             </div>
-
-            <div class="form-options">
-                <label class="checkbox-container">
-                    <input type="checkbox" @bind="Input.RememberMe" class="checkbox-input" />
-                    <span class="checkbox-checkmark"></span>
-                    <span class="checkbox-label">Recordarme</span>
-                </label>
-                <a href="Account/ForgotPassword" class="forgot-link">
-                    ¿Olvidaste tu contraseña?
-                </a>
-            </div>
-
-            <button type="submit" class="btn-login" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <span class="spinner"></span>
-                    <span>Iniciando sesión...</span>
-                }
-                else
-                {
-                    <span class="btn-text">Iniciar Sesión</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                }
-            </button>
-        </EditForm>
-
-        <!-- Footer con versión -->
-        <div class="login-footer">
-            <p>🔒 Conexión segura • AlmaTrack v1.0</p>
         </div>
     </div>
 </div>
@@ -144,8 +102,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await SignInManager.SignOutAsync();
-
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -157,8 +113,7 @@
         isLoading = true;
         errorMessage = null;
         StateHasChanged();
-
-        await Task.Delay(500);
+        await Task.Delay(400);
 
         try
         {
@@ -166,454 +121,235 @@
 
             if (result.Succeeded)
             {
-                Logger.LogInformation("User logged in.");
                 RedirectManager.RedirectTo(ReturnUrl);
             }
             else if (result.RequiresTwoFactor)
             {
-                RedirectManager.RedirectTo(
-                    "Account/LoginWith2fa",
-                    new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+                RedirectManager.RedirectTo("Account/LoginWith2fa", new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
             }
             else if (result.IsLockedOut)
             {
-                Logger.LogWarning("User account locked out.");
-                errorMessage = "🔒 Tu cuenta ha sido bloqueada temporalmente. Intenta más tarde.";
+                errorMessage = "Cuenta bloqueada.";
                 isLoading = false;
             }
             else
             {
-                Logger.LogWarning("Failed login attempt for user: {UserName}", Input.UserName);
-                errorMessage = "Usuario o contraseña incorrectos. Por favor, verifica tus credenciales.";
+                errorMessage = "Credenciales inválidas.";
                 isLoading = false;
             }
         }
+        catch (NavigationException)
+        {
+            throw; 
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during login attempt");
-            errorMessage = "Ha ocurrido un error. Por favor, intenta nuevamente.";
+            Logger.LogError(ex, "Error login");
+            errorMessage = "Error de conexión.";
             isLoading = false;
         }
-
         StateHasChanged();
     }
 
     private sealed class InputModel
     {
-        [Required(ErrorMessage = "El usuario es requerido")]
+        [Required(ErrorMessage = "Usuario requerido")]
         public string UserName { get; set; } = "";
 
-        [Required(ErrorMessage = "La contraseña es requerida")]
-        [DataType(DataType.Password)]
+        [Required(ErrorMessage = "Contraseña requerida")]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 }
 
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+    /* Layout Principal */
+    .main-container {
+        display: flex;
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background-color: #fff;
     }
 
-    .login-container {
-        min-height: 100vh;
+    /* --- LADO IZQUIERDO (AZUL OSCURO) --- */
+    .brand-side {
+        flex: 1; 
+        background-color: #0f172a; 
+        background-image: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        align-items: center;
+        padding: 40px;
         position: relative;
         overflow: hidden;
     }
-
     
-    .login-card {
-        background: white;
-        padding: 50px;
-        border-radius: 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-        width: 100%;
-        max-width: 480px;
+    .brand-content {
         position: relative;
-        z-index: 1;
-        animation: slideUp 0.6s ease;
-    }
-
-    @@keyframes slideUp {
-        from
-
-    {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    }
-
-    /* Logo y marca */
-    .brand-header {
+        z-index: 2;
         text-align: center;
-        margin-bottom: 35px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    .brand-icon {
+    /* ESTILO DEL ÍCONO (CUBO BLANCO) */
+    .logo-icon {
+        color: white;
         margin-bottom: 20px;
-        animation: float 3s ease-in-out infinite;
+        display: flex;
+        justify-content: center;
     }
 
-    @@keyframes float {
-        0%, 100%
-
-    {
-        transform: translateY(0px);
+    .logo-icon svg {
+        width: 100px;
+        height: 100px;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
     }
 
-    50% {
-        transform: translateY(-10px);
-    }
-
-    }
-
-    .brand-header h1 {
-        font-size: 2.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+    /* TÍTULO GRANDE */
+    .brand-content h1 {
+        font-size: 3rem;
         font-weight: 800;
-        margin-bottom: 8px;
-        letter-spacing: -1px;
+        margin: 0 0 10px 0;
+        line-height: 1.1;
     }
 
-    .brand-subtitle {
-        color: #718096;
-        font-size: 0.95rem;
-        font-weight: 500;
+    /* SLOGAN */
+    .brand-slogan {
+        font-size: 1.1rem;
+        color: #94a3b8; /* Gris azulado claro */
+        font-weight: 400;
+        opacity: 0.9;
     }
 
-    
-    .form-header {
-        text-align: center;
-        margin-bottom: 35px;
+    /* PATRÓN DE FONDO (PUNTITOS) */
+    .brand-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: radial-gradient(#ffffff 1px, transparent 1px);
+        background-size: 30px 30px;
+        opacity: 0.05;
+        z-index: 1;
     }
 
-        .form-header h2 {
-            font-size: 1.8rem;
-            color: #2d3748;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .form-header p {
-            color: #718096;
-            font-size: 0.95rem;
-        }
-
-  
-    .form-group {
-        margin-bottom: 24px;
-    }
-
-    .form-label {
+    /* --- LADO DERECHO (FORMULARIO) --- */
+    .form-side {
+        width: 500px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 10px;
-        font-size: 0.95rem;
+        justify-content: center;
+        padding: 40px;
+        background-color: #ffffff;
     }
 
-    .form-input {
+    .form-wrapper {
         width: 100%;
-        padding: 14px 18px;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: #f8f9fa;
-        font-family: inherit;
+        max-width: 360px;
     }
 
-        .form-input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
+    .form-header { margin-bottom: 30px; }
+    .form-header h2 { font-size: 1.8rem; color: #1e293b; font-weight: 700; margin-bottom: 5px; }
+    .form-header p { color: #64748b; margin: 0; }
 
-    .validation-error {
-        color: #e53e3e;
-        font-size: 0.85rem;
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-        .validation-error::before {
-            content: "⚠️";
-        }
-
+    /* Inputs */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; font-size: 0.9rem; }
     
-    .form-options {
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc; /* Fondo gris muy claro en inputs */
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .form-control:focus {
+        outline: none;
+        background-color: #fff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .text-danger { color: #ef4444; font-size: 0.85rem; margin-top: 4px; display: block; }
+
+    /* Checkbox & Links */
+    .form-check {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 28px;
-    }
-
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        position: relative;
-    }
-
-    .checkbox-input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-    }
-
-    .checkbox-checkmark {
-        height: 20px;
-        width: 20px;
-        background-color: #f8f9fa;
-        border: 2px solid #e2e8f0;
-        border-radius: 6px;
-        transition: all 0.3s;
-        position: relative;
-    }
-
-    .checkbox-input:checked ~ .checkbox-checkmark {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        border-color: #667eea;
-    }
-
-        .checkbox-input:checked ~ .checkbox-checkmark::after {
-            content: "";
-            position: absolute;
-            left: 6px;
-            top: 2px;
-            width: 5px;
-            height: 10px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
-
-    .checkbox-label {
-        color: #4a5568;
+        margin-bottom: 24px;
         font-size: 0.9rem;
-        font-weight: 500;
     }
+    .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #64748b; }
+    .forgot-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .forgot-link:hover { text-decoration: underline; }
 
-    .forgot-link {
-        color: #667eea;
-        text-decoration: none;
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-
-        .forgot-link:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-
-    
-    .btn-login {
+    /* Botón */
+    .btn-primary {
         width: 100%;
-        padding: 16px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 14px;
+        background-color: #3b82f6; /* Azul brillante */
         color: white;
         border: none;
-        border-radius: 12px;
-        font-size: 1.05rem;
+        border-radius: 8px;
+        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        position: relative;
-        overflow: hidden;
+        transition: background-color 0.2s;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
     }
-
-        .btn-login::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn-login:hover::before {
-            left: 100%;
-        }
-
-        .btn-login:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .btn-login:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-    .btn-icon {
-        transition: transform 0.3s ease;
-    }
-
-    .btn-login:hover:not(:disabled) .btn-icon {
-        transform: translateX(5px);
-    }
-
-    
-    .spinner {
-        width: 20px;
-        height: 20px;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top-color: white;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-    }
-
-    @@keyframes spin {
-        to
-
-    {
-        transform: rotate(360deg);
-    }
-
-    }
-
-    
-    .login-footer {
-        margin-top: 24px;
-        text-align: center;
-        padding-top: 20px;
-        border-top: 1px solid #e2e8f0;
-    }
-
-        .login-footer p {
-            color: #a0aec0;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-    
-    .alert {
-        padding: 14px 18px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        animation: shake 0.5s, fadeIn 0.3s;
-        font-size: 0.95rem;
-        font-weight: 500;
-    }
+    .btn-primary:hover:not(:disabled) { background-color: #2563eb; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.7; cursor: wait; }
 
     .alert-danger {
-        background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-        border: 2px solid #fc8181;
-        color: #c53030;
-        box-shadow: 0 4px 12px rgba(252, 129, 129, 0.2);
+        padding: 12px;
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        border: 1px solid #fecaca;
     }
 
-    .alert svg {
-        flex-shrink: 0;
+    .spinner {
+        display: inline-block;
+        width: 16px; height: 16px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 5px;
+    }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer-copy {
+        margin-top: 40px;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #94a3b8;
     }
 
-    @@keyframes shake {
-        0%, 100%
-
-    {
-        transform: translateX(0);
-    }
-
-    10%, 30%, 50%, 70%, 90% {
-        transform: translateX(-8px);
-    }
-
-    20%, 40%, 60%, 80% {
-        transform: translateX(8px);
-    }
-
-    }
-
-    @@keyframes fadeIn {
-        from
-
-    {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    }
-
-    
-    @@media (max-width: 640px) {
-        .login-card
-
-    {
-        padding: 35px 25px;
-    }
-
-    .brand-header h1 {
-        font-size: 2rem;
-    }
-
-    .form-header h2 {
-        font-size: 1.5rem;
-    }
-
-    .form-options {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
-    }
-
-    }
-
-   
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0px 1000px white inset !important;
-        -webkit-text-fill-color: #2d3748 !important;
-        transition: background-color 5000s ease-in-out 0s;
+    /* Responsividad */
+    @@media (max-width: 768px) {
+        .main-container { flex-direction: column; }
+        .brand-side { padding: 30px; flex: none; height: 250px; }
+        
+        .logo-icon svg { width: 60px; height: 60px; }
+        .brand-content h1 { font-size: 2rem; }
+        .brand-slogan { font-size: 0.9rem; }
+        
+        .form-side {
+            width: 100%;
+            flex: 1;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -20px;
+            z-index: 10;
+        }
     }
 </style>

@@ -39,18 +39,17 @@ namespace SistemaAlmacen.Services
         {
             try
             {
-                var existe = await _context.Productos.AnyAsync(p => p.Codigo == producto.Codigo);
+                var existe = await _context.Productos
+                    .AnyAsync(p => p.Codigo == producto.Codigo);
                 if (existe) return false;
 
                 producto.FechaCreacion = DateTime.Now;
+                producto.Existencias = 0; // Siempre arranca en 0; se sube con entradas
                 _context.Productos.Add(producto);
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
-            {
-                return false;
-            }
+            catch { return false; }
         }
 
         public async Task<bool> ActualizarAsync(Producto producto)
@@ -61,27 +60,20 @@ namespace SistemaAlmacen.Services
                     .AnyAsync(p => p.Codigo == producto.Codigo && p.Id != producto.Id);
                 if (existe) return false;
 
-                var productoExistente = await _context.Productos.FindAsync(producto.Id);
-                if (productoExistente == null) return false;
+                var p = await _context.Productos.FindAsync(producto.Id);
+                if (p == null) return false;
 
-                productoExistente.Codigo = producto.Codigo;
-                productoExistente.Nombre = producto.Nombre;
-                productoExistente.Descripcion = producto.Descripcion;
-                productoExistente.CategoriaId = producto.CategoriaId;
-                productoExistente.PrecioCompra = producto.PrecioCompra;
-                productoExistente.PrecioVenta = producto.PrecioVenta;
-                productoExistente.Stock = producto.Stock;
-                productoExistente.StockMinimo = producto.StockMinimo;
-                productoExistente.Unidad = producto.Unidad;
-                productoExistente.Activo = producto.Activo;
+                p.Codigo = producto.Codigo;
+                p.Nombre = producto.Nombre;
+                p.Descripcion = producto.Descripcion;
+                p.CategoriaId = producto.CategoriaId;
+                p.Activo = producto.Activo;
+                // Existencias NO se toca aquí — solo se modifica vía movimientos
 
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
-            {
-                return false;
-            }
+            catch { return false; }
         }
 
         public async Task EliminarAsync(int id)

@@ -85,7 +85,7 @@ using (var scope = app.Services.CreateScope())
 
     var adminUserName = "admin";
     var adminEmail = "admin@almatrack.com";
-    var adminPassword = "Admin123!";
+    var adminPassword = "Admin123.";
 
     var adminUser = await userManager.FindByNameAsync(adminUserName);
 

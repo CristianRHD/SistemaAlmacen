@@ -17,46 +17,42 @@
 <div class="productos-container">
 
     <div class="productos-header">
-        <h1 class="productos-titulo">📦 Gestión de Nuevos Productos</h1>
+        <h1 class="productos-titulo">📦 Gestión de Catálogo Maestro</h1>
         <button @onclick="AbrirModalNuevo" class="btn-nuevo">
-            ➕ Nuevo Producto
+            ➕ Registrar Nuevo Artículo
         </button>
     </div>
 
     @if (cargando)
     {
         <div class="cargando-container">
-            <p class="cargando-texto">⏳ Cargando productos...</p>
+            <p class="cargando-texto">⏳ Cargando catálogo de artículos...</p>
         </div>
     }
     else if (!productos.Any())
     {
         <div class="vacio-container">
             <div class="vacio-icono">📭</div>
-            <h3 class="vacio-titulo">No hay productos registrados</h3>
-            <p class="vacio-texto">Comienza agregando tu primer producto</p>
+            <h3 class="vacio-titulo">No hay artículos en el catálogo</h3>
+            <p class="vacio-texto">Define aquí los modelos de electrodomésticos y artículos del hogar.</p>
             <button @onclick="AbrirModalNuevo" class="btn-agregar">
-                ➕ Agregar Producto
+                ➕ Agregar Primer Artículo
             </button>
         </div>
     }
     else
     {
-        <!-- Búsqueda -->
-        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar por nombre o código..." class="input-busqueda" />
+        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar por nombre, marca o código..." class="input-busqueda" />
 
-        <!-- Tabla -->
         <div class="tabla-container">
             <div class="tabla-wrapper">
                 <table class="tabla-productos">
                     <thead class="tabla-head">
                         <tr>
                             <th class="tabla-th">Código</th>
-                            <th class="tabla-th">Nombre</th>
+                            <th class="tabla-th">Descripción / Modelo</th>
                             <th class="tabla-th">Categoría</th>
-                            <th class="tabla-th">Stock</th>
-                            <th class="tabla-th">P. Compra</th>
-                            <th class="tabla-th">P. Venta</th>
+                            <th class="tabla-th">Existencias</th>
                             <th class="tabla-th">Estado</th>
                             <th class="tabla-th">Acciones</th>
                         </tr>
@@ -76,38 +72,21 @@
                                         @(p.Categoria?.Nombre ?? "Sin categoría")
                                     </span>
                                 </td>
-                                <td class="tabla-td" data-label="Stock">
+                                <td class="tabla-td" data-label="Existencias">
                                     <span class="badge-stock" style="@GetColorStock(p)">
-                                        @p.Stock @p.Unidad
+                                        @p.Existencias unidades
                                     </span>
                                 </td>
-                                <td class="tabla-td" data-label="P. Compra">
-                                    <span>@FormatearMoneda(p.PrecioCompra)</span>
-                                </td>
-                                <td class="tabla-td" data-label="P. Venta">
-                                    <span>@FormatearMoneda(p.PrecioVenta)</span>
-                                </td>
                                 <td class="tabla-td" data-label="Estado">
-                                    @if (p.Activo)
-                                    {
-                                        <span class="badge-activo">✅ Activo</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-inactivo">❌ Inactivo</span>
-                                    }
+                                    <span class="@(p.Activo ? "badge-activo" : "badge-inactivo")">
+                                        @(p.Activo ? "✅ Activo" : "❌ Inactivo")
+                                    </span>
                                 </td>
                                 <td class="tabla-td" data-label="Acciones">
                                     <div class="acciones-container">
-                                        <button @onclick="() => VerDetalle(p)" title="Ver detalles" class="btn-accion btn-ver">
-                                            👁️
-                                        </button>
-                                        <button @onclick="() => Editar(p)" title="Editar" class="btn-accion btn-editar">
-                                            ✏️
-                                        </button>
-                                        <button @onclick="() => Eliminar(p)" title="Eliminar" class="btn-accion btn-eliminar">
-                                            🗑️
-                                        </button>
+                                        <button @onclick="() => VerDetalle(p)" title="Ver detalles" class="btn-accion btn-ver">👁️</button>
+                                        <button @onclick="() => Editar(p)" title="Editar" class="btn-accion btn-editar">✏️</button>
+                                        <button @onclick="() => Eliminar(p)" title="Eliminar" class="btn-accion btn-eliminar">🗑️</button>
                                     </div>
                                 </td>
                             </tr>
@@ -117,40 +96,40 @@
             </div>
 
             <div class="tabla-footer">
-                <p class="tabla-total"><strong>Total:</strong> @Filtrados.Count productos</p>
+                <p class="tabla-total"><strong>Total:</strong> @Filtrados.Count modelos registrados</p>
             </div>
         </div>
     }
 </div>
 
-@* Modal Nuevo/Editar *@
+@* Modal Nuevo/Editar (Diseño Corregido) *@
 @if (mostrarModal)
 {
     <div class="modal-overlay" @onclick="CerrarModal">
         <div class="modal-contenido" @onclick:stopPropagation>
             <div class="modal-header">
-                <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar" : "➕ Nuevo") Producto</h3>
+                <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar" : "➕ Nueva") Ficha de Artículo</h3>
                 <button @onclick="CerrarModal" class="modal-cerrar">×</button>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Código *</label>
-                    <input type="text" @bind="form.Codigo" class="form-input" />
+                    <label class="form-label">Código del Producto *</label>
+                    <input type="text" @bind="form.Codigo" class="form-input" placeholder="Ej: TV-SAM-55-4K" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Nombre *</label>
-                    <input type="text" @bind="form.Nombre" class="form-input" />
+                    <label class="form-label">Nombre / Modelo *</label>
+                    <input type="text" @bind="form.Nombre" class="form-input" placeholder="Ej: Smart TV Samsung 55'' QLED" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Descripción</label>
-                    <textarea @bind="form.Descripcion" rows="3" class="form-textarea"></textarea>
+                    <label class="form-label">Descripción Técnica</label>
+                    <textarea @bind="form.Descripcion" rows="3" class="form-textarea" placeholder="Especificaciones, marca, etc."></textarea>
                 </div>
 
                 <div class="form-grid">
-                    <div>
+                    <div class="form-group">
                         <label class="form-label">Categoría *</label>
                         <select @bind="form.CategoriaId" class="form-select">
                             <option value="0">Seleccione...</option>
@@ -161,114 +140,27 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="form-label">Unidad</label>
-                        <input type="text" @bind="form.Unidad" class="form-input" />
+                    <div class="form-checkbox" style="align-self: end; padding-bottom: 12px;">
+                        <label class="checkbox-label">
+                            <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
+                            <span class="checkbox-text">Habilitar para inventario</span>
+                        </label>
                     </div>
                 </div>
 
-                <div class="form-grid">
-                    <div>
-                        <label class="form-label">Precio Compra </label>
-                        <input type="number" @bind="form.PrecioCompra" step="0.01" class="form-input" />
-                    </div>
-
-                    <div>
-                        <label class="form-label">Precio Venta </label>
-                        <input type="number" @bind="form.PrecioVenta" step="0.01" class="form-input" />
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div>
-                        <label class="form-label">Stock </label>
-                        <input type="number" @bind="form.Stock" class="form-input" />
-                    </div>
-
-                    <div>
-                        <label class="form-label">Stock Mínimo </label>
-                        <input type="number" @bind="form.StockMinimo" class="form-input" />
-                    </div>
-                </div>
-
-                <div class="form-checkbox">
-                    <label class="checkbox-label">
-                        <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
-                        <span class="checkbox-text">Producto activo</span>
-                    </label>
+                <div class="nota-maestra" style="background: #fff8e1; border-left: 5px solid #ffc107; padding: 15px; border-radius: 8px; font-size: 0.9rem; color: #856404; margin: 15px 0;">
+                    📌 <strong>Importante:</strong> Los valores de <strong>Existencias</strong> y <strong>Costos de Compra</strong> se gestionan únicamente a través de la sección de <strong>Movimientos</strong>.
                 </div>
 
                 @if (!string.IsNullOrEmpty(error))
                 {
-                    <div class="error-mensaje">
-                        ❌ @error
-                    </div>
+                    <div class="error-mensaje">❌ @error</div>
                 }
 
                 <div class="modal-footer">
-                    <button @onclick="CerrarModal" class="btn-cancelar">
-                        Cancelar
-                    </button>
-                    <button @onclick="Guardar" disabled="@guardando" class="btn-guardar" style="opacity: @(guardando ? "0.6" : "1")">
-                        @(guardando ? "⏳ Guardando..." : "💾 Guardar")
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@* Modal Detalle *@
-@if (mostrarDetalle && detalle != null)
-{
-    <div class="modal-overlay" @onclick="CerrarDetalle">
-        <div class="modal-detalle" @onclick:stopPropagation>
-            <div class="modal-header">
-                <h3 class="modal-titulo-detalle">📋 Detalles del Producto</h3>
-                <button @onclick="CerrarDetalle" class="modal-cerrar">×</button>
-            </div>
-
-            <div class="detalle-body">
-                <div class="detalle-grid">
-                    <div class="detalle-item">
-                        <strong class="detalle-label">Código:</strong>
-                        <span class="detalle-valor">@detalle.Codigo</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong class="detalle-label">Nombre:</strong>
-                        <span class="detalle-valor">@detalle.Nombre</span>
-                    </div>
-                    @if (!string.IsNullOrEmpty(detalle.Descripcion))
-                    {
-                        <div class="detalle-item">
-                            <strong class="detalle-label">Descripción:</strong>
-                            <span class="detalle-valor">@detalle.Descripcion</span>
-                        </div>
-                    }
-                    <div class="detalle-item">
-                        <strong class="detalle-label">Categoría:</strong>
-                        <span class="detalle-valor">@(detalle.Categoria?.Nombre ?? "Sin categoría")</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong class="detalle-label">Stock:</strong>
-                        <span class="detalle-valor">@detalle.Stock @detalle.Unidad</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong class="detalle-label">P. Compra:</strong>
-                        <span class="detalle-valor">@FormatearMoneda(detalle.PrecioCompra)</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong class="detalle-label">P. Venta:</strong>
-                        <span class="detalle-valor">@FormatearMoneda(detalle.PrecioVenta)</span>
-                    </div>
-                </div>
-
-                <div class="detalle-footer">
-                    <button @onclick="CerrarDetalle" class="btn-cancelar">
-                        Cerrar
-                    </button>
-                    <button @onclick="() => { CerrarDetalle(); Editar(detalle); }" class="btn-editar-detalle">
-                        ✏️ Editar
+                    <button @onclick="CerrarModal" class="btn-cancelar">Cancelar</button>
+                    <button @onclick="Guardar" disabled="@guardando" class="btn-guardar">
+                        @(guardando ? "⏳..." : "💾 Guardar Ficha")
                     </button>
                 </div>
             </div>
@@ -277,691 +169,53 @@
 }
 
 <style>
-    .productos-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-        padding: 20px;
-    }
-
-    /* Header */
-    .productos-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #2196f3;
-    }
-
-    .productos-titulo {
-        margin: 0;
-        font-size: 2rem;
-        color: #2d3748;
-    }
-
-    .btn-nuevo {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-
-    /* Estados de carga y vacío */
-    .cargando-container {
-        text-align: center;
-        padding: 60px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .cargando-texto {
-        font-size: 1.2rem;
-        color: #718096;
-    }
-
-    .vacio-container {
-        text-align: center;
-        padding: 80px 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .vacio-icono {
-        font-size: 5rem;
-        margin-bottom: 20px;
-    }
-
-    .vacio-titulo {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-        color: #2d3748;
-    }
-
-    .vacio-texto {
-        color: #718096;
-        margin-bottom: 30px;
-    }
-
-    .btn-agregar {
-        background: #2196f3;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    /* Búsqueda */
-    .input-busqueda {
-        width: 100%;
-        padding: 12px 20px;
-        margin-bottom: 20px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s;
-    }
-
-    /* Tabla */
-    .tabla-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .tabla-wrapper {
-        overflow-x: auto;
-    }
-
-    .tabla-productos {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 900px;
-    }
-
-    .tabla-head {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-    }
-
-    .tabla-th {
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    .tabla-fila {
-        border-bottom: 1px solid #f0f0f0;
-        transition: background-color 0.2s;
-    }
-
-    .tabla-fila:hover {
-        background-color: #f8f9fa;
-    }
-
-    .tabla-td {
-        padding: 15px;
-    }
-
-    .tabla-codigo {
-        color: #2d3748;
-    }
-
-    .tabla-nombre {
-        color: #2d3748;
-    }
-
-    .badge-categoria {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #e3f2fd;
-        color: #1976d2;
-        display: inline-block;
-    }
-
-    .badge-stock {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        display: inline-block;
-    }
-
-    .badge-activo {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #4caf50;
-        color: white;
-        display: inline-block;
-    }
-
-    .badge-inactivo {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #f44336;
-        color: white;
-        display: inline-block;
-    }
-
-    .acciones-container {
-        display: flex;
-        gap: 8px;
-        flex-wrap: nowrap;
-    }
-
-    .btn-accion {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        color: white;
-        font-size: 1.1rem;
-        transition: all 0.2s;
-    }
-
-    .btn-ver {
-        background: #2196f3;
-    }
-
-    .btn-editar {
-        background: #ff9800;
-    }
-
-    .btn-eliminar {
-        background: #f44336;
-    }
-
-    .tabla-footer {
-        padding: 15px;
-        background: white;
-        text-align: right;
-        border-radius: 0 0 12px 12px;
-        border-top: 1px solid #f0f0f0;
-    }
-
-    .tabla-total {
-        color: #2d3748;
-        margin: 0;
-    }
-
-    /* Modal */
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    .modal-contenido {
-        background: white;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 700px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    }
-
-    .modal-detalle {
-        background: white;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 600px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 25px;
-        border-bottom: 2px solid #f0f0f0;
-    }
-
-    .modal-titulo {
-        margin: 0;
-        font-size: 1.5rem;
-        color: #2d3748;
-    }
-
-    .modal-titulo-detalle {
-        margin: 0;
-        color: #2d3748;
-    }
-
-    .modal-cerrar {
-        background: none;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        color: #718096;
-        line-height: 1;
-    }
-
-    .modal-body {
-        padding: 25px;
-    }
-
-    /* FORMULARIO MEJORADO */
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: 700;
-        color: #1a202c;
-        font-size: 1.05rem;
-    }
-
-    .form-input, .form-select {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 1.05rem;
-        color: #1a202c;
-        font-weight: 500;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
-                    0 1px 2px rgba(0, 0, 0, 0.06);
-        transition: all 0.2s ease;
-    }
-
-    .form-textarea {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 1.05rem;
-        color: #1a202c;
-        font-weight: 500;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 
-                    0 1px 2px rgba(0, 0, 0, 0.06);
-        resize: vertical;
-        transition: all 0.2s ease;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .form-checkbox {
-        margin-bottom: 20px;
-    }
-
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-    }
-
-    .checkbox-input {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .checkbox-text {
-        font-weight: 700;
-        color: #1a202c;
-        font-size: 1.05rem;
-    }
-
-    .error-mensaje {
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #ef5350;
-        font-weight: 600;
-    }
-
-    .modal-footer, .detalle-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 15px;
-        padding-top: 20px;
-        border-top: 2px solid #f0f0f0;
-    }
-
-    .btn-cancelar {
-        background: #6c757d;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-guardar {
-        background: #2196f3;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-editar-detalle {
-        background: #2196f3;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-
-    /* Detalle */
-    .detalle-body {
-        padding: 25px;
-    }
-
-    .detalle-grid {
-        display: grid;
-        gap: 15px;
-    }
-
-    .detalle-item {
-        display: grid;
-        grid-template-columns: 150px 1fr;
-        padding: 12px;
-        background: #f8f9fa;
-        border-radius: 8px;
-    }
-
-    .detalle-label {
-        color: #2196f3;
-        font-weight: 700;
-    }
-
-    .detalle-valor {
-        color: #1a202c;
-        font-weight: 600;
-    }
-
-    .detalle-footer {
-        margin-top: 20px;
-    }
-
-    /* Estados de interacción */
-    input:focus, textarea:focus, select:focus {
-        outline: none;
-        border-color: #2196f3 !important;
-        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15), 
-                    0 2px 4px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    button:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    button:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-        color: #718096;
-        font-weight: 400;
-    }
-
-    /* ============================================ */
-    /* RESPONSIVE - DISEÑO MÓVIL */
-    /* ============================================ */
-    @@media (max-width: 768px) {
-        .productos-container {
-            padding: 15px;
-        }
-
-        .productos-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-            padding-bottom: 15px;
-        }
-
-        .productos-titulo {
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .btn-nuevo {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 1rem;
-        }
-
-        .input-busqueda {
-            font-size: 0.95rem;
-            padding: 10px 15px;
-        }
-
-        /* TABLA COMO TARJETAS EN MÓVIL */
-        .tabla-wrapper {
-            overflow: visible;
-        }
-
-        .tabla-productos {
-            display: block;
-            min-width: auto;
-        }
-
-        .tabla-head {
-            display: none;
-        }
-
-        .tabla-productos tbody {
-            display: block;
-        }
-
-        .tabla-fila {
-            display: block;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            padding: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .tabla-fila:hover {
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-
-        .tabla-td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border: none;
-        }
-
-        .tabla-td::before {
-            content: attr(data-label);
-            font-weight: 700;
-            color: #4b5563;
-            font-size: 0.85rem;
-            flex: 0 0 100px;
-        }
-
-        .tabla-td:first-child {
-            padding-top: 0;
-        }
-
-        .tabla-td:last-child {
-            padding-bottom: 0;
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .tabla-td:last-child::before {
-            margin-bottom: 10px;
-        }
-
-        .tabla-codigo {
-            font-size: 1rem;
-        }
-
-        .tabla-nombre {
-            font-size: 0.95rem;
-        }
-
-        .badge-categoria,
-        .badge-stock,
-        .badge-activo,
-        .badge-inactivo {
-            padding: 5px 10px;
-            font-size: 0.8rem;
-        }
-
-        .acciones-container {
-            width: 100%;
-            gap: 8px;
-        }
-
-        .btn-accion {
-            flex: 1;
-            padding: 10px;
-            font-size: 1.2rem;
-        }
-
-        .tabla-footer {
-            text-align: center;
-        }
-
-        /* Modal responsive */
-        .modal-contenido,
-        .modal-detalle {
-            width: 95%;
-            max-height: 85vh;
-            margin: 10px;
-        }
-
-        .modal-header {
-            padding: 15px 20px;
-        }
-
-        .modal-titulo,
-        .modal-titulo-detalle {
-            font-size: 1.2rem;
-        }
-
-        .modal-body,
-        .detalle-body {
-            padding: 20px;
-        }
-
-        .form-grid {
-            grid-template-columns: 1fr;
-            gap: 0;
-        }
-
-        .form-label {
-            font-size: 1rem;
-            margin-bottom: 8px;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            font-size: 1rem;
-            padding: 10px 14px;
-        }
-
-        .modal-footer,
-        .detalle-footer {
-            flex-direction: column-reverse;
-            gap: 10px;
-        }
-
-        .btn-cancelar,
-        .btn-guardar,
-        .btn-editar-detalle {
-            width: 100%;
-            padding: 12px 20px;
-        }
-
-        .detalle-item {
-            grid-template-columns: 1fr;
-            gap: 5px;
-        }
-
-        .detalle-label {
-            font-size: 0.9rem;
-        }
-
-        .detalle-valor {
-            font-size: 0.95rem;
-        }
-
-        .vacio-container,
-        .cargando-container {
-            padding: 40px 15px;
-        }
-
-        .vacio-icono {
-            font-size: 3.5rem;
-        }
-
-        .vacio-titulo {
-            font-size: 1.2rem;
-        }
-
-        .btn-agregar {
-            width: 100%;
-            padding: 12px 20px;
-        }
-    }
-
-    @@media (min-width: 769px) and (max-width: 1024px) {
-        .productos-container {
-            padding: 20px 15px;
-        }
-
-        .tabla-th,
-        .tabla-td {
-            padding: 12px 10px;
-            font-size: 0.9rem;
-        }
-
-        .form-grid {
-            gap: 15px;
-        }
-    }
+    .productos-container { width: 100%; padding: 20px; }
+    .productos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #2196f3; }
+    .productos-titulo { margin: 0; font-size: 2rem; color: #2d3748; }
+    .btn-nuevo { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+    
+    .cargando-container, .vacio-container { text-align: center; padding: 60px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .input-busqueda { width: 100%; padding: 12px 20px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+    
+    .tabla-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .tabla-wrapper { overflow-x: auto; }
+    .tabla-productos { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .tabla-head { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; }
+    .tabla-th { padding: 15px; text-align: left; font-weight: 600; }
+    .tabla-fila { border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s; }
+    .tabla-fila:hover { background-color: #f8f9fa; }
+    .tabla-td { padding: 15px; }
+
+    .badge-categoria { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+    .badge-stock { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+    .badge-activo { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .badge-inactivo { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+    .acciones-container { display: flex; gap: 8px; }
+    .btn-accion { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1rem; transition: all 0.2s; }
+    .btn-ver { background: #2196f3; }
+    .btn-editar { background: #ff9800; }
+    .btn-eliminar { background: #f44336; }
+
+    /* Modal Styles */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-contenido { background: white; border-radius: 15px; width: 90%; max-width: 650px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #f0f0f0; }
+    .modal-body { padding: 25px; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 700; color: #1a202c; font-size: 0.95rem; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
+    .form-input:focus { outline: none; border-color: #2196f3; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .checkbox-input { width: 18px; height: 18px; }
+    .checkbox-text { font-weight: 600; color: #4a5568; }
+
+    .modal-footer { display: flex; justify-content: flex-end; gap: 15px; padding: 20px 25px; border-top: 2px solid #f0f0f0; }
+    .btn-cancelar { background: #edf2f7; color: #4a5568; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+    .btn-guardar { background: #2196f3; color: white; padding: 10px 25px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
 </style>
 
 @code {
@@ -978,8 +232,6 @@
     private bool guardando = false;
     private DialogModal DialogRef;
 
-    private string simboloMoneda = "RD$";
-
     private List<Producto> Filtrados =>
         string.IsNullOrWhiteSpace(busqueda)
             ? productos
@@ -988,30 +240,19 @@
                 p.Codigo.Contains(busqueda, StringComparison.OrdinalIgnoreCase)
             ).ToList();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Cargar();
-    }
+    protected override async Task OnInitializedAsync() => await Cargar();
 
     private async Task Cargar()
     {
         cargando = true;
         productos = await ProductoService.ObtenerTodosAsync();
-        categorias = await Context.Categorias
-            .OrderBy(c => c.Nombre)
-            .ToListAsync();
+        categorias = await ProductoService.ObtenerCategoriasAsync();
         cargando = false;
     }
 
     private void AbrirModalNuevo()
     {
-        form = new Producto
-        {
-            Activo = true,
-            StockMinimo = 10,
-            Stock = 0,
-            Unidad = "Unidad"
-        };
+        form = new Producto { Activo = true };
         esEdicion = false;
         error = "";
         mostrarModal = true;
@@ -1026,11 +267,6 @@
             Nombre = p.Nombre,
             Descripcion = p.Descripcion,
             CategoriaId = p.CategoriaId,
-            PrecioCompra = p.PrecioCompra,
-            PrecioVenta = p.PrecioVenta,
-            Stock = p.Stock,
-            StockMinimo = p.StockMinimo,
-            Unidad = p.Unidad,
             Activo = p.Activo
         };
         esEdicion = true;
@@ -1065,70 +301,38 @@
             {
                 await Cargar();
                 CerrarModal();
-                await DialogRef.ShowSuccessAsync(
-                    esEdicion ? "Producto actualizado" : "Producto agregado",
-                    esEdicion ? "El producto se actualizó correctamente" : "El producto se agregó correctamente"
-                );
+                await DialogRef.ShowSuccessAsync("Éxito", esEdicion ? "Ficha actualizada" : "Nuevo modelo registrado");
             }
-            else
-            {
-                error = "El código ya existe";
-            }
+            else { error = "El código ya existe"; }
         }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-        finally
-        {
-            guardando = false;
-        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { guardando = false; }
     }
 
     private async Task Eliminar(Producto p)
     {
-        bool ok = await DialogRef.ShowConfirmAsync(
-            "Eliminar Producto",
-            $"¿Está seguro de que desea eliminar '{p.Nombre}'? Esta acción no se puede deshacer.",
-            "Eliminar",
-            "🗑️"
-        );
+        if (p.Existencias > 0)
+        {
+            await DialogRef.ShowErrorAsync("Alerta", "No se puede eliminar un artículo que aún tiene existencias físicas en el almacén.");
+            return;
+        }
+
+        bool ok = await DialogRef.ShowConfirmAsync("Eliminar", $"¿Desea borrar '{p.Nombre}' del catálogo?", "Eliminar", "🗑️");
         if (ok)
         {
             await ProductoService.EliminarAsync(p.Id);
             await Cargar();
-            await DialogRef.ShowSuccessAsync("Producto eliminado", "El producto se eliminó correctamente");
+            await DialogRef.ShowSuccessAsync("Eliminado", "El artículo ha sido removido del catálogo maestro.");
         }
     }
 
-    private void VerDetalle(Producto p)
-    {
-        detalle = p;
-        mostrarDetalle = true;
-    }
-
-    private void CerrarModal()
-    {
-        mostrarModal = false;
-        form = new();
-        error = "";
-    }
-
-    private void CerrarDetalle()
-    {
-        mostrarDetalle = false;
-        detalle = null;
-    }
+    private void VerDetalle(Producto p) { detalle = p; mostrarDetalle = true; }
+    private void CerrarModal() { mostrarModal = false; form = new(); error = ""; }
+    private void CerrarDetalle() { mostrarDetalle = false; detalle = null; }
 
     private string GetColorStock(Producto p)
     {
-        if (p.Stock == 0) return "background: #f44336; color: white;";
-        if (p.Stock <= p.StockMinimo) return "background: #ff9800; color: white;";
-        return "background: #4caf50; color: white;";
-    }
-
-    private string FormatearMoneda(decimal valor)
-    {
-        return $"{simboloMoneda}{valor:N2}";
+        if (p.Existencias == 0) return "background: #fee2e2; color: #b91c1c; border: 1px solid #f87171;";
+        return "background: #dcfce7; color: #15803d; border: 1px solid #4ade80;";
     }
 }

@@ -1,8 +1,723 @@
-
 @page "/salida"
-@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Admin,Gerente,Almacenista")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using SistemaAlmacen.Models
+@using SistemaAlmacen.Services
+@using SistemaAlmacen.Data
+@using Microsoft.EntityFrameworkCore
+@inject ProductoService ProductoService
+@inject IMovimientoService MovimientoService
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthProvider
+@inject IJSRuntime JS
 
-<PageTitle>Salidas</PageTitle>
-<h2>Salidas de Almacén</h2>
-<!-- Aquí va la lógica y UI para las salidas -->
+<DialogModal @ref="DialogRef" />
+
+<PageTitle>Despachos - AlmaTrack</PageTitle>
+
+<div class="main-content-wrapper">
+    <div class="salida-header-top">
+        <div>
+            <h1 class="salida-titulo">Gestión de Despachos</h1>
+            <p class="salida-subtitulo">Registro y control de salidas del almacén central</p>
+        </div>
+        <button @onclick="AbrirModalNuevo" class="btn-nuevo">
+            <span class="btn-icon">＋</span> Nuevo Despacho
+        </button>
+    </div>
+
+    <div class="tabla-container">
+        <table class="tabla-almatrack">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Referencia</th>
+                    <th>Destino</th>
+                    <th>Artículos</th>
+                    <th>Responsable</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @* Agrupamos por la referencia que guardamos en Observaciones con prefijo "SAL-" *@
+                @foreach (var grupo in historialSalidas
+                    .GroupBy(m => m.Observaciones)
+                    .OrderByDescending(g => g.Max(m => m.Id)))
+                {
+                    <tr>
+                        <td class="col-fecha">@grupo.First().Fecha.ToString("dd/MM/yyyy")</td>
+                        <td><span class="ref-tag">@grupo.Key</span></td>
+                        <td>@grupo.First().Destino</td>
+                        <td><span class="badge-count">@grupo.Count() ítems</span></td>
+                        <td class="col-usuario">@grupo.First().UsuarioResponsable</td>
+                        <td>
+                            <button class="btn-accion" title="Imprimir Conduce"
+                                    @onclick="() => Reimprimir(grupo.Key ?? string.Empty)">
+                                🖨️ Imprimir
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* --- MODAL DE REGISTRO --- *@
+@if (mostrarModal)
+{
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Nuevo Despacho Interno</h3>
+                    <p class="modal-ref">Ref: <strong>@proximaReferencia</strong></p>
+                </div>
+                <button @onclick="CerrarModal" class="btn-close-modal">×</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Destino / Área <span class="req">*</span></label>
+                        <input type="text" @bind="destino" class="form-input" placeholder="Ej: Sucursal Cotuí" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Observaciones</label>
+                        <input type="text" @bind="notasLibres" class="form-input" placeholder="Ej: Urgente, para evento..." />
+                    </div>
+                </div>
+
+                <div class="form-group search-group">
+                    <label class="form-label">Buscar producto</label>
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" @bind="searchQuery" @oninput="OnSearchProducto"
+                               class="form-input search-input" placeholder="Nombre o código del producto..." />
+                        @if (mostrarSugerencias && filteredProductos.Any())
+                        {
+                            <ul class="suggestions">
+                                @foreach (var p in filteredProductos)
+                                {
+                                    <li @onclick="() => SeleccionarProducto(p)">
+                                        <span class="sug-code">@p.Codigo</span>
+                                        <span class="sug-name">@p.Nombre</span>
+                                        <span class="sug-stock">Existencias: @p.Existencias</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                @if (productoSeleccionado != null)
+                {
+                    <div class="add-bar">
+                        <div class="selected-product">
+                            <span class="sel-code">@productoSeleccionado.Codigo</span>
+                            <span class="sel-name">@productoSeleccionado.Nombre</span>
+                            <span class="sel-stock">Disponible: @productoSeleccionado.Existencias</span>
+                        </div>
+                        <div class="add-controls">
+                            <label>Cantidad:</label>
+                            <input type="number" @bind="cantidadADespachar" class="input-cantidad"
+                                   min="1" max="@productoSeleccionado.Existencias" />
+                            <button @onclick="AgregarALista" class="btn-add-item">Añadir</button>
+                        </div>
+                    </div>
+                }
+
+                @if (listaSalida.Any())
+                {
+                    <div class="preview-list">
+                        <div class="preview-header">
+                            <span>Artículos a despachar</span>
+                            <span class="preview-total">@listaSalida.Sum(x => x.Cantidad) unidades</span>
+                        </div>
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th style="text-align:center">Cant.</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in listaSalida)
+                                {
+                                    <tr>
+                                        <td>@item.ProductoCodigo</td>
+                                        <td>@item.ProductoNombre</td>
+                                        <td style="text-align:center">@item.Cantidad</td>
+                                        <td><button class="btn-remove" @onclick="() => QuitarDeLista(item)">✕</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button @onclick="CerrarModal" class="btn-cancel">Cancelar</button>
+                <button @onclick="ProcesarSalida"
+                        disabled="@(!listaSalida.Any() || string.IsNullOrEmpty(destino) || guardando)"
+                        class="btn-save">
+                    @(guardando ? "Procesando..." : "Procesar y Generar Conduce")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@400;500;600;700&display=swap');
+
+    :root {
+        --blue: #1414b8;
+        --blue-light: #eef2ff;
+        --blue-mid: #4f52d3;
+        --text: #1e293b;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --bg: #f8fafc;
+        --white: #ffffff;
+        --danger: #ef4444;
+        --success: #10b981;
+        --mono: 'IBM Plex Mono', monospace;
+        --sans: 'Sora', sans-serif;
+        --radius: 10px;
+        --shadow: 0 4px 24px rgba(20,20,184,0.07);
+    }
+
+    .main-content-wrapper { padding: 32px; font-family: var(--sans); }
+
+    .salida-header-top {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--border);
+    }
+
+    .salida-titulo { font-size: 1.6rem; font-weight: 700; color: var(--text); margin: 0; }
+    .salida-subtitulo { color: var(--muted); font-size: 0.875rem; margin: 4px 0 0; }
+
+    .btn-nuevo {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--blue); color: white; border: none;
+        padding: 11px 22px; border-radius: var(--radius);
+        font-weight: 600; font-size: 0.9rem; cursor: pointer;
+        font-family: var(--sans); transition: background 0.2s, transform 0.1s;
+    }
+    .btn-nuevo:hover { background: var(--blue-mid); transform: translateY(-1px); }
+
+    .tabla-container {
+        background: var(--white); border-radius: 14px;
+        border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow);
+    }
+
+    .tabla-almatrack { width: 100%; border-collapse: collapse; font-family: var(--sans); }
+    .tabla-almatrack thead tr { background: var(--bg); border-bottom: 2px solid var(--border); }
+    .tabla-almatrack th {
+        padding: 14px 18px; text-align: left; font-size: 0.78rem;
+        font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    }
+    .tabla-almatrack td { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text); }
+    .tabla-almatrack tbody tr:last-child td { border-bottom: none; }
+    .tabla-almatrack tbody tr:hover { background: #fafbff; }
+
+    .ref-tag {
+        font-family: var(--mono); font-size: 0.8rem;
+        background: var(--blue-light); color: var(--blue);
+        padding: 3px 9px; border-radius: 5px; font-weight: 600;
+    }
+
+    .badge-count {
+        background: #f0fdf4; color: var(--success);
+        border: 1px solid #bbf7d0; padding: 3px 10px;
+        border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    }
+
+    .col-fecha { font-family: var(--mono); font-size: 0.82rem; color: var(--muted); }
+    .col-usuario { font-size: 0.85rem; color: var(--muted); }
+
+    .btn-accion {
+        font-size: 0.8rem; background: var(--blue-light); color: var(--blue);
+        border: 1px solid #c7d2fe; padding: 6px 14px; border-radius: 7px;
+        cursor: pointer; font-weight: 600; font-family: var(--sans); transition: background 0.15s;
+    }
+    .btn-accion:hover { background: #e0e7ff; }
+
+    /* MODAL */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 1000; padding: 20px; backdrop-filter: blur(3px);
+    }
+
+    .modal-card {
+        background: var(--white); width: 100%; max-width: 700px;
+        border-radius: 16px; overflow: hidden;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.18);
+        font-family: var(--sans); max-height: 90vh;
+        display: flex; flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 22px 24px 18px; border-bottom: 1px solid var(--border); background: var(--bg);
+    }
+
+    .modal-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text); }
+    .modal-ref { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+
+    .btn-close-modal {
+        background: none; border: 1px solid var(--border);
+        width: 32px; height: 32px; border-radius: 8px;
+        font-size: 1.2rem; cursor: pointer; color: var(--muted);
+        line-height: 1; transition: background 0.15s; flex-shrink: 0;
+    }
+    .btn-close-modal:hover { background: var(--border); color: var(--text); }
+
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+    .form-row-2 {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px;
+    }
+    @@media (max-width: 560px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 16px; position: relative; }
+
+    .form-label {
+        display: block; font-size: 0.8rem; font-weight: 600;
+        color: var(--muted); text-transform: uppercase;
+        letter-spacing: 0.05em; margin-bottom: 7px;
+    }
+
+    .req { color: var(--danger); }
+
+    .form-input {
+        width: 100%; padding: 10px 14px;
+        border: 1.5px solid var(--border); border-radius: var(--radius);
+        font-size: 0.9rem; color: var(--text); font-family: var(--sans);
+        background: var(--white); transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(20,20,184,0.1); }
+
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 0.9rem; }
+    .search-input { padding-left: 36px; }
+
+    .suggestions {
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: var(--white); border: 1.5px solid var(--border);
+        border-radius: var(--radius); list-style: none; padding: 6px 0; margin: 0;
+        z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        max-height: 220px; overflow-y: auto;
+    }
+
+    .suggestions li {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 14px; cursor: pointer; transition: background 0.1s; font-size: 0.875rem;
+    }
+    .suggestions li:hover { background: var(--blue-light); }
+
+    .sug-code { font-family: var(--mono); font-size: 0.78rem; color: var(--blue); font-weight: 600; min-width: 70px; }
+    .sug-name { flex: 1; color: var(--text); }
+    .sug-stock { font-size: 0.78rem; color: var(--muted); background: var(--bg); padding: 2px 7px; border-radius: 4px; }
+
+    .add-bar {
+        background: var(--blue-light); border: 1.5px solid #c7d2fe;
+        border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px;
+    }
+
+    .selected-product { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .sel-code { font-family: var(--mono); font-size: 0.8rem; color: var(--blue); font-weight: 600; }
+    .sel-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+    .sel-stock { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+
+    .add-controls { display: flex; align-items: center; gap: 10px; }
+    .add-controls label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+
+    .input-cantidad {
+        width: 90px; padding: 8px 12px;
+        border: 1.5px solid #c7d2fe; border-radius: 8px;
+        font-size: 0.9rem; font-family: var(--mono);
+        background: var(--white); text-align: center;
+    }
+
+    .btn-add-item {
+        background: var(--blue); color: white; border: none;
+        padding: 8px 18px; border-radius: 8px;
+        font-weight: 600; font-size: 0.85rem; cursor: pointer;
+        font-family: var(--sans); transition: background 0.15s;
+    }
+    .btn-add-item:hover { background: var(--blue-mid); }
+
+    .preview-list { border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    .preview-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; background: var(--bg); border-bottom: 1px solid var(--border);
+        font-size: 0.8rem; font-weight: 600; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .preview-total { background: var(--blue-light); color: var(--blue); padding: 2px 9px; border-radius: 4px; font-weight: 700; }
+
+    .mini-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .mini-table th {
+        padding: 9px 12px; background: var(--bg); border-bottom: 1px solid var(--border);
+        font-size: 0.75rem; font-weight: 600; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.04em; text-align: left;
+    }
+    .mini-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .mini-table tbody tr:last-child td { border-bottom: none; }
+
+    .btn-remove {
+        background: none; border: none; color: var(--danger);
+        cursor: pointer; font-size: 0.9rem; padding: 4px 7px;
+        border-radius: 5px; transition: background 0.1s;
+    }
+    .btn-remove:hover { background: #fee2e2; }
+
+    .modal-footer {
+        padding: 16px 24px; border-top: 1px solid var(--border);
+        display: flex; justify-content: flex-end; gap: 10px; background: var(--bg);
+    }
+
+    .btn-cancel {
+        background: var(--white); color: var(--muted); border: 1.5px solid var(--border);
+        padding: 10px 20px; border-radius: var(--radius);
+        font-weight: 600; cursor: pointer; font-family: var(--sans); font-size: 0.9rem;
+    }
+    .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+    .btn-save {
+        background: var(--blue); color: white; border: none;
+        padding: 10px 24px; border-radius: var(--radius);
+        font-weight: 600; cursor: pointer; font-family: var(--sans); font-size: 0.9rem;
+        transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-save:hover { background: var(--blue-mid); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+
+<script>
+    window.printConduce = function (data) {
+        var fmt = function(n) {
+            return 'RD$ ' + Number(n).toLocaleString('es-DO', {minimumFractionDigits:2, maximumFractionDigits:2});
+        };
+        var rows = data.items.map(function(i) {
+            return '<tr>'
+                + '<td>' + i.codigo + '</td>'
+                + '<td>' + i.nombre + '</td>'
+                + '<td style="text-align:center">' + i.cantidad + '</td>'
+                + '<td style="text-align:right">' + fmt(i.precioUnitario) + '</td>'
+                + '<td style="text-align:right">' + fmt(i.totalItem) + '</td>'
+                + '</tr>';
+        }).join('');
+        var totalUnidades = data.items.reduce(function(s, i) { return s + i.cantidad; }, 0);
+        var totalValor = data.items.reduce(function(s, i) { return s + i.totalItem; }, 0);
+
+        var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Conduce ' + data.referencia + '</title>'
+            + '<style>'
+            + '* { margin:0; padding:0; box-sizing:border-box; }'
+            + 'body { font-family: Arial, sans-serif; background:white; color:#000; padding: 1.8cm 2cm; }'
+            + '.header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1414b8; padding-bottom:16px; margin-bottom:20px; }'
+            + '.brand { display:flex; align-items:center; gap:12px; }'
+            + '.logo { width:52px; height:52px; background:#1414b8; color:white; font-size:17pt; font-weight:900; display:flex; align-items:center; justify-content:center; border-radius:9px; print-color-adjust:exact; -webkit-print-color-adjust:exact; }'
+            + '.brand-name { font-size:22pt; font-weight:900; color:#1414b8; }'
+            + '.brand-sub { font-size:7.5pt; color:#555; text-transform:uppercase; letter-spacing:.1em; margin-top:3px; }'
+            + '.ref-box { text-align:right; }'
+            + '.ref-label { font-size:8pt; text-transform:uppercase; letter-spacing:.1em; color:#555; font-weight:700; }'
+            + '.ref-num { font-size:14pt; font-weight:900; color:#1414b8; font-family:Courier New,monospace; margin:3px 0; }'
+            + '.ref-date { font-size:9pt; color:#333; }'
+            + '.info-grid { display:flex; border:1px solid #ccc; margin-bottom:20px; }'
+            + '.info-item { flex:1; padding:9px 13px; border-right:1px solid #ccc; }'
+            + '.info-item:last-child { border-right:none; }'
+            + '.info-label { display:block; font-size:7pt; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#666; margin-bottom:3px; }'
+            + '.info-value { font-size:10pt; font-weight:700; color:#000; }'
+            + 'table { width:100%; border-collapse:collapse; table-layout:fixed; }'
+            + 'thead tr { background:#1414b8; print-color-adjust:exact; -webkit-print-color-adjust:exact; }'
+            + 'thead th { color:white; padding:8px 11px; font-size:8.5pt; font-weight:700; text-align:left; text-transform:uppercase; letter-spacing:.06em; }'
+            + 'tbody td { padding:8px 11px; border-bottom:1px solid #e0e0e0; font-size:10pt; word-wrap:break-word; }'
+            + 'tbody tr:nth-child(even) td { background:#f5f5f5; print-color-adjust:exact; -webkit-print-color-adjust:exact; }'
+            + '.total-row td { border-top:2px solid #1414b8; border-bottom:none; font-weight:700; padding:10px 11px; font-size:10pt; }'
+            + '.obs { margin-top:16px; padding:9px 13px; border:1px solid #ddd; font-size:9.5pt; color:#333; }'
+            + '.firmas { display:flex; justify-content:space-around; margin-top:80px; }'
+            + '.firma { width:36%; text-align:center; }'
+            + '.linea { border-top:1.5px solid #000; margin-bottom:7px; }'
+            + '.firma p { font-size:8pt; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }'
+            + '@@media print { @@page { size:letter portrait; margin:1.5cm 2cm; } body { padding:0; } }'
+            + '</style></head><body>'
+            + '<div class="header">'
+            +   '<div class="brand"><div class="logo">AT</div><div><div class="brand-name">ALMATRACK</div><div class="brand-sub">Sistema de Control de Inventario</div></div></div>'
+            +   '<div class="ref-box"><div class="ref-label">Conduce de Salida</div><div class="ref-num">' + data.referencia + '</div><div class="ref-date">' + data.fecha + '</div></div>'
+            + '</div>'
+            + '<div class="info-grid">'
+            +   '<div class="info-item"><span class="info-label">Origen</span><span class="info-value">ALMAC\u00C9N CENTRAL</span></div>'
+            +   '<div class="info-item"><span class="info-label">Destino</span><span class="info-value">' + (data.destino || 'NO ESPECIFICADO') + '</span></div>'
+            +   '<div class="info-item"><span class="info-label">Responsable</span><span class="info-value">' + data.usuario + '</span></div>'
+            + '</div>'
+            + '<table>'
+            +   '<thead><tr>'
+            +     '<th style="width:14%">C\u00F3digo</th>'
+            +     '<th style="width:40%">Descripci\u00F3n</th>'
+            +     '<th style="width:12%;text-align:center">Cant.</th>'
+            +     '<th style="width:17%;text-align:right">Precio Unit.</th>'
+            +     '<th style="width:17%;text-align:right">Total</th>'
+            +   '</tr></thead>'
+            +   '<tbody>' + rows + '</tbody>'
+            +   '<tfoot>'
+            +     '<tr class="total-row">'
+            +       '<td colspan="2" style="text-align:right">TOTALES:</td>'
+            +       '<td style="text-align:center">' + totalUnidades + ' uds.</td>'
+            +       '<td></td>'
+            +       '<td style="text-align:right">' + fmt(totalValor) + '</td>'
+            +     '</tr>'
+            +   '</tfoot>'
+            + '</table>'
+            + '<div class="obs"><strong>Observaciones:</strong> ' + (data.observaciones || 'Sin observaciones.') + '</div>'
+            + '<div class="firmas"><div class="firma"><div class="linea"></div><p>Autorizado / Despachado por</p></div><div class="firma"><div class="linea"></div><p>Recibido por (Destino)</p></div></div>'
+            + '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};</scr' + 'ipt>'
+            + '</body></html>';
+        var win = window.open('', '_blank', 'width=900,height=700');
+        if (!win) { alert('Permite las ventanas emergentes para imprimir el conduce.'); return; }
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+    };
+</script>
+
+
+@code {
+    private List<Producto> productos = new();
+    private List<Producto> filteredProductos = new();
+    private List<Movimiento> historialSalidas = new();
+    private List<ItemSalida> listaSalida = new();
+    private Producto? productoSeleccionado;
+
+    // proximaReferencia = lo que se guarda en Observaciones (campo del modelo) para agrupar
+    private string proximaReferencia = "";
+
+    // notasLibres = lo que el usuario escribe como "observaciones" visibles en el conduce
+    private string searchQuery = "", destino = "", notasLibres = "", usuarioActual = "";
+    private int cantidadADespachar = 1;
+    private bool mostrarSugerencias = false, guardando = false, mostrarModal = false;
+    private DialogModal DialogRef = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        usuarioActual = authState.User.Identity?.Name ?? "Admin";
+    }
+
+    private async Task CargarDatos()
+    {
+        productos = await ProductoService.ObtenerTodosAsync();
+        var todos = await MovimientoService.ObtenerTodosAsync();
+        // Solo salidas, y que tengan referencia SAL- en Observaciones
+        historialSalidas = todos
+            .Where(m => m.Tipo == "Salida" && m.Observaciones != null && m.Observaciones.StartsWith("SAL-"))
+            .ToList();
+    }
+
+    private void AbrirModalNuevo()
+    {
+        listaSalida.Clear();
+        destino = "";
+        notasLibres = "";
+        productoSeleccionado = null;
+        searchQuery = "";
+        // La referencia SAL- es la que va en el campo Observaciones del modelo
+        proximaReferencia = $"SAL-{DateTime.Now:yyyyMMdd-HHmm}";
+        mostrarModal = true;
+    }
+
+    private void CerrarModal() => mostrarModal = false;
+
+    private void OnSearchProducto(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        mostrarSugerencias = !string.IsNullOrEmpty(searchQuery);
+        filteredProductos = productos
+            .Where(p => p.Nombre.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                     || p.Codigo.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+            .Take(6).ToList();
+    }
+
+    private void SeleccionarProducto(Producto p)
+    {
+        productoSeleccionado = p;
+        searchQuery = p.Nombre;
+        mostrarSugerencias = false;
+        cantidadADespachar = 1;
+    }
+
+    private void AgregarALista()
+    {
+        if (productoSeleccionado == null || cantidadADespachar < 1 || cantidadADespachar > productoSeleccionado.Existencias)
+            return;
+
+        // Evitar duplicados: si ya está en la lista, solo suma la cantidad
+        var existente = listaSalida.FirstOrDefault(x => x.ProductoId == productoSeleccionado.Id);
+        if (existente != null)
+        {
+            existente.Cantidad += cantidadADespachar;
+        }
+        else
+        {
+            listaSalida.Add(new ItemSalida
+            {
+                ProductoId = productoSeleccionado.Id,
+                ProductoNombre = productoSeleccionado.Nombre,
+                ProductoCodigo = productoSeleccionado.Codigo,
+                Cantidad = cantidadADespachar
+            });
+        }
+
+        productoSeleccionado = null;
+        searchQuery = "";
+        cantidadADespachar = 1;
+    }
+
+    private void QuitarDeLista(ItemSalida item) => listaSalida.Remove(item);
+
+    private async Task ImprimirConduce(string destino, string referencia, string notas)
+    {
+        var items = listaSalida.Select(i => new {
+            codigo = i.ProductoCodigo,
+            nombre = i.ProductoNombre,
+            cantidad = i.Cantidad,
+            precioUnitario = i.PrecioUnitario,
+            totalItem = i.Cantidad * i.PrecioUnitario
+        }).ToArray();
+
+        var data = new {
+            referencia,
+            fecha = DateTime.Now.ToString("dd/MM/yyyy  HH:mm"),
+            destino = destino.ToUpper(),
+            usuario = usuarioActual.ToUpper(),
+            observaciones = notas,
+            items
+        };
+
+        await JS.InvokeVoidAsync("printConduce", data);
+    }
+
+    private async Task ProcesarSalida()
+    {
+        if (string.IsNullOrEmpty(destino) || !listaSalida.Any()) return;
+
+        guardando = true;
+        try
+        {
+            // PASO 1: Buscar el último precio de cada producto ANTES de guardar
+            var todosMovs = await MovimientoService.ObtenerTodosAsync();
+            foreach (var item in listaSalida)
+            {
+                var ultimoPrecio = todosMovs
+                    .Where(m => m.ProductoId == item.ProductoId
+                             && m.Tipo == "Entrada"
+                             && m.PrecioCompra != null
+                             && m.PrecioCompra > 0)
+                    .OrderByDescending(m => m.Fecha)
+                    .Select(m => m.PrecioCompra ?? 0)
+                    .FirstOrDefault();
+                item.PrecioUnitario = ultimoPrecio;
+            }
+
+            // PASO 2: Guardar copia con precios para el conduce ANTES de que CargarDatos limpie listaSalida
+            var destinoCaptura    = destino;
+            var referenciaCaptura = proximaReferencia;
+            var notasCaptura      = notasLibres;
+            var itemsParaConduce  = listaSalida.Select(i => new ItemSalida
+            {
+                ProductoId     = i.ProductoId,
+                ProductoCodigo = i.ProductoCodigo,
+                ProductoNombre = i.ProductoNombre,
+                Cantidad       = i.Cantidad,
+                PrecioUnitario = i.PrecioUnitario
+            }).ToList();
+
+            // PASO 3: Registrar cada salida en BD (baja existencias)
+            foreach (var item in listaSalida)
+            {
+                var ok = await MovimientoService.RegistrarSalidaAsync(
+                    productoId:    item.ProductoId,
+                    cantidad:      item.Cantidad,
+                    destino:       destino,
+                    observaciones: proximaReferencia,
+                    usuario:       usuarioActual);
+
+                if (!ok)
+                {
+                    await DialogRef.ShowErrorAsync("Error",
+                        $"No se pudo registrar '{item.ProductoNombre}'. Verifique existencias disponibles.");
+                    return;
+                }
+            }
+
+            // PASO 4: Cerrar modal y recargar (esto limpia listaSalida)
+            mostrarModal = false;
+            await CargarDatos();
+
+            // PASO 5: Restaurar la copia con precios y abrir el conduce
+            listaSalida = itemsParaConduce;
+            await ImprimirConduce(destinoCaptura, referenciaCaptura, notasCaptura);
+
+            await DialogRef.ShowSuccessAsync("Completado", "Despacho registrado correctamente.");
+        }
+        catch (Exception ex)
+        {
+            await DialogRef.ShowErrorAsync("Error", ex.Message);
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private async Task Reimprimir(string referencia)
+    {
+        if (string.IsNullOrEmpty(referencia)) return;
+
+        var grupo = historialSalidas
+            .Where(m => m.Observaciones == referencia)
+            .ToList();
+
+        if (!grupo.Any()) return;
+
+        listaSalida = grupo.Select(m => new ItemSalida
+        {
+            ProductoCodigo = m.Producto?.Codigo ?? "",
+            ProductoNombre = m.Producto?.Nombre ?? "",
+            Cantidad = m.Cantidad,
+            PrecioUnitario = m.PrecioCompra ?? 0
+        }).ToList();
+
+        var destinoReimpresion  = grupo.First().Destino ?? "";
+        var usuarioReimpresion  = grupo.First().UsuarioResponsable ?? usuarioActual;
+
+        // Guardamos temporalmente para que ImprimirConduce los use
+        destino          = destinoReimpresion;
+        usuarioActual    = usuarioReimpresion;
+        proximaReferencia = referencia;
+        notasLibres       = "";   // las notas libres no se guardan por separado en este modelo
+
+        await ImprimirConduce(destinoReimpresion, referencia, "");
+    }
+
+    public class ItemSalida
+    {
+        public int ProductoId { get; set; }
+        public string ProductoNombre { get; set; } = "";
+        public string ProductoCodigo { get; set; } = "";
+        public int Cantidad { get; set; }
+        public decimal PrecioUnitario { get; set; } = 0;
+    }
+}

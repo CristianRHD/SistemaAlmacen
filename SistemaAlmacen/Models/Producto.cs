@@ -19,39 +19,19 @@ namespace SistemaAlmacen.Models
         [StringLength(500)]
         public string? Descripcion { get; set; }
 
-        [Required]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal PrecioCompra { get; set; }
-
-        [Required]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal PrecioVenta { get; set; }
-
-        [Required]
-        public int Stock { get; set; }
-
-        [Required]
-        public int StockMinimo { get; set; } = 10;
-
-        [StringLength(50)]
-        public string? Unidad { get; set; } = "Unidad";
+       
+        public int Existencias { get; set; }
 
         public bool Activo { get; set; } = true;
 
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
+      
+
         [Required]
         public int CategoriaId { get; set; }
 
-    
-
         [ForeignKey("CategoriaId")]
         public Categoria Categoria { get; set; } = null!;
-
-      
-        public Proveedor? Proveedor { get; set; }
-
-        public string? UserId { get; set; } 
     }
 }
-

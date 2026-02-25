@@ -463,18 +463,18 @@
                 .CountAsync();
 
             productosStockBajo = await Context.Productos
-                .Where(p => p.Stock <= p.StockMinimo && p.Activo)
+                .Where(p => p.Existencias <= p.Existencias && p.Activo)
                 .CountAsync();
         }
         catch
         {
-            // Manejo silencioso de errores de conexión DB inicial
+            
         }
     }
 }
 
 <style>
-    /* Variables de Diseño */
+  
     :root {
         --primary: #1414b8;
         --primary-dark: #1414b8;
@@ -499,7 +499,7 @@
         min-height: 100vh;
     }
 
-    /* HERO BANNER */
+  
     .hero-banner {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         border-radius: 20px;
@@ -559,7 +559,7 @@
         opacity: 0.6;
     }
 
-    /* KPI CARDS */
+   
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -645,7 +645,7 @@
             font-weight: 600;
         }
 
-    /* Estilo alerta roja */
+   
     .kpi-card.alert-mode {
         border: 1px solid #fecaca;
         background: #fffafa;
@@ -655,7 +655,7 @@
             color: var(--color-red);
         }
 
-    /* ACCESOS RÁPIDOS */
+
     .section-title h2 {
         font-size: 1.5rem;
         font-weight: 700;

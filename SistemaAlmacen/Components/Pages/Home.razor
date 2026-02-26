@@ -357,7 +357,7 @@
             </div>
             <div class="kpi-body">
                 <h3 class="kpi-value">@totalCategorias</h3>
-                <span class="kpi-trend">Activas</span>
+                
             </div>
         </div>
 
@@ -374,26 +374,10 @@
             </div>
         </div>
 
-        <div class="kpi-card @(productosStockBajo > 0 ? "alert-mode" : "")">
-            <div class="kpi-header">
-                <div class="icon-box icon-red">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                </div>
-                <span class="kpi-label">Stock Bajo</span>
-            </div>
-            <div class="kpi-body">
-                <h3 class="kpi-value">@productosStockBajo</h3>
-                @if (productosStockBajo > 0)
-                {
-                    <span class="kpi-trend negative">¡Atención requerida!</span>
-                }
-                else
-                {
-                    <span class="kpi-trend positive">Todo en orden</span>
-                }
+       
             </div>
         </div>
-    </div>
+       
 
     <div class="section-title">
         <h2>⚡ Accesos Rápidos</h2>
@@ -440,13 +424,13 @@
         </a>
     </div>
 
-</div>
+
 
 @code {
     private int totalProductos = 0;
     private int totalCategorias = 0;
     private int totalProveedores = 0;
-    private int productosStockBajo = 0;
+   
 
     protected override async Task OnInitializedAsync()
     {
@@ -462,9 +446,6 @@
                 .Where(p => p.Activo)
                 .CountAsync();
 
-            productosStockBajo = await Context.Productos
-                .Where(p => p.Existencias <= p.Existencias && p.Activo)
-                .CountAsync();
         }
         catch
         {

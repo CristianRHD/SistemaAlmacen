@@ -64,14 +64,7 @@
                                 <td class="tabla-td">@(p.Email ?? "N/A")</td>
                                 <td class="tabla-td tabla-direccion">@(p.Direccion ?? "Sin dirección")</td>
                                 <td class="tabla-td">
-                                    @if (p.Activo)
-                                    {
-                                        <span class="badge-activo">✅ Activo</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-inactivo">❌ Inactivo</span>
-                                    }
+                                   
                                 </td>
                                 <td class="tabla-td">
                                     <div class="acciones-container">
@@ -189,10 +182,7 @@
                         <strong class="detalle-label">Fecha Registro:</strong>
                         <span class="detalle-valor">@detalle.FechaRegistro.ToString("dd/MM/yyyy")</span>
                     </div>
-                    <div class="detalle-item">
-                        <strong class="detalle-label">Estado:</strong>
-                        <span class="detalle-valor">@(detalle.Activo ? "✅ Activo" : "❌ Inactivo")</span>
-                    </div>
+                   
                 </div>
 
                 <div class="detalle-footer">

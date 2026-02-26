@@ -63,9 +63,7 @@
                                     </span>
                                 </td>
                                 <td class="table-cell">
-                                    <span class="@(u.Activo ? "badge-activo" : "badge-inactivo")">
-                                        @(u.Activo ? "✅ Activo" : "🔒 Bloqueado")
-                                    </span>
+                                    
                                 </td>
                                 <td class="table-cell">
                                     <div class="acciones-flex">
@@ -134,11 +132,7 @@
                     <div class="permisos-buttons-grid">
                         @foreach (var func in funcionesDelSistema)
                         {
-                            var estaActivo = permisosManuales.Contains(func.Id);
-                            <button @onclick="() => AlternarPermiso(func.Id)" 
-                                    class="btn-permiso @(estaActivo ? "active" : "")">
-                                @(estaActivo ? "✅" : "➕") @func.Nombre
-                            </button>
+                          
                         }
                     </div>
                 </div>

@@ -38,7 +38,7 @@
                             <th>Producto / Código</th>
                             <th>Proveedor / RNC</th>
                             <th>Cant.</th>
-                            <th>Costo Unit.</th>
+                            <th>Costo Por Lotes</th>
                             <th>Responsable</th>
                             <th>Acciones</th>
                         </tr>
@@ -54,7 +54,10 @@
                                 <td class="tabla-td">RD$ @(mov.PrecioCompra?.ToString("N2") ?? "0.00")</td>
                                 <td class="tabla-td"><span class="user-badge">👤 @mov.UsuarioResponsable</span></td>
                                 <td class="tabla-td">
-                                    <button @onclick="() => Eliminar(mov)" class="btn-eliminar-simple">🗑️</button>
+                                    <div class="acciones-container">
+                                        <button @onclick="() => AbrirModalEditar(mov)" title="Editar" class="btn-accion btn-editar">✏️</button>
+                                        <button @onclick="() => Eliminar(mov)" title="Eliminar" class="btn-accion btn-eliminar">🗑️</button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -65,23 +68,23 @@
     }
 </div>
 
-@* MODAL DE ENTRADA CON LÓGICA MANUAL *@
+@* MODAL NUEVO / EDITAR *@
 @if (mostrarModal)
 {
     <div class="modal-overlay" @onclick="CerrarModal">
         <div class="modal-contenido" @onclick:stopPropagation>
             <div class="modal-header">
-                <h3 class="modal-titulo">📦 Registro de Nueva Recepción</h3>
+                <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar Entrada" : "📦 Registro de Nueva Recepción")</h3>
                 <button @onclick="CerrarModal" class="modal-cerrar">×</button>
             </div>
 
             <div class="modal-body">
-                @* 1. BÚSQUEDA DUAL PRODUCTO (Nombre o Código) *@
+                @* BÚSQUEDA PRODUCTO *@
                 <div class="form-group search-group">
                     <label class="form-label">Buscar Artículo *</label>
                     <input type="text" class="form-input" placeholder="Escriba nombre o código..."
                            @bind="searchProducto" @oninput="OnSearchProducto" />
-                    
+
                     @if (mostrarResultadosProducto && filteredProductos.Any() && productoId == 0)
                     {
                         <ul class="search-results">
@@ -99,12 +102,12 @@
                     }
                 </div>
 
-                @* 2. BÚSQUEDA DUAL PROVEEDOR (Nombre o RNC) *@
+                @* BÚSQUEDA PROVEEDOR *@
                 <div class="form-group search-group">
                     <label class="form-label">Proveedor *</label>
                     <input type="text" class="form-input" placeholder="Escriba nombre o RNC..."
                            @bind="searchProveedor" @oninput="OnSearchProveedor" />
-                    
+
                     @if (mostrarResultadosProveedor && filteredProveedores.Any() && proveedorId == 0)
                     {
                         <ul class="search-results">
@@ -133,16 +136,26 @@
                     </div>
                 </div>
 
-                @* 3. CAMPO LÓGICO MANUAL (NO SE GUARDA EN BD) *@
-                <div class="form-group">
-                    <label class="form-label" style="color: #1414b8;">🔔 Notificarme si después de esto quedan menos de:</label>
-                    <input type="number" @bind="umbralAvisoManual" class="form-input border-blue" placeholder="Ej: 5" @oninput="ValidarAlertaManual" />
-                </div>
-
-                @if (mostrarAlertaVisual)
+                @* UMBRAL VISUAL (solo en nuevo) *@
+                @if (!esEdicion)
                 {
-                    <div class="alert-warning-manual">
-                        ⚠️ <strong>Atención:</strong> Según tu umbral (@umbralAvisoManual), este producto quedará en estado crítico (@(existenciasActuales + cantidad) unidades).
+                    <div class="form-group">
+                        <label class="form-label" style="color: #1414b8;">🔔 Notificarme si después de esto quedan menos de:</label>
+                        <input type="number" @bind="umbralAvisoManual" class="form-input border-blue" placeholder="Ej: 5" @oninput="ValidarAlertaManual" />
+                    </div>
+
+                    @if (mostrarAlertaVisual)
+                    {
+                        <div class="alert-warning-manual">
+                            ⚠️ <strong>Atención:</strong> Según tu umbral (@umbralAvisoManual), este producto quedará en estado crítico (@(existenciasActuales + cantidad) unidades).
+                        </div>
+                    }
+                }
+
+                @if (esEdicion)
+                {
+                    <div class="nota-edicion">
+                        📌 Al guardar, el stock del producto se recalculará con la nueva cantidad.
                     </div>
                 }
 
@@ -154,7 +167,7 @@
                 <div class="modal-footer">
                     <button @onclick="CerrarModal" class="btn-cancelar">Cancelar</button>
                     <button @onclick="Guardar" disabled="@guardando" class="btn-guardar">
-                        @(guardando ? "💾 Procesando..." : "💾 Registrar Entrada")
+                        @(guardando ? "⏳ Procesando..." : (esEdicion ? "💾 Guardar Cambios" : "💾 Registrar Entrada"))
                     </button>
                 </div>
             </div>
@@ -163,17 +176,20 @@
 }
 
 <style>
-   
     .entrada-container { padding: 25px; }
     .entrada-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1414b8; padding-bottom: 15px; margin-bottom: 25px; }
     .btn-nuevo { background: #1414b8; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    
+
     .tabla-container { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; }
     .tabla-entradas { width: 100%; border-collapse: collapse; }
     .tabla-head { background: #f8fafc; text-align: left; }
     .tabla-head th { padding: 15px; border-bottom: 2px solid #e2e8f0; font-size: 0.85rem; color: #475569; }
     .tabla-td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-    
+
+    .acciones-container { display: flex; gap: 8px; }
+    .btn-accion { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1rem; transition: all 0.2s; }
+    .btn-editar  { background: #ff9800; }
+    .btn-eliminar { background: #f44336; }
 
     .search-group { position: relative; }
     .search-results { position: absolute; background: white; border: 1px solid #ddd; width: 100%; z-index: 100; list-style: none; padding: 0; margin: 0; border-radius: 8px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
@@ -183,19 +199,25 @@
     .selected-badge { background: #eef2ff; color: #1414b8; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; margin-top: 8px; font-weight: bold; border: 1px solid #c3dafe; }
     .btn-remove { color: #ef4444; cursor: pointer; padding: 0 5px; }
 
-    
     .alert-warning-manual { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; animation: pulse 2s infinite; }
     .border-blue { border: 2px solid #1414b8 !important; }
 
-   
+    .nota-edicion { background: #fff8e1; border-left: 5px solid #ffc107; padding: 12px 15px; border-radius: 8px; font-size: 0.85rem; color: #856404; margin-bottom: 15px; }
+    .error-mensaje { background: #fef2f2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-contenido { background: white; width: 95%; max-width: 600px; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
     .modal-header { padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 20px; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-    .form-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .form-group { margin-bottom: 15px; }
+    .form-label { display: block; margin-bottom: 6px; font-weight: 600; color: #374151; font-size: 0.9rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .form-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; }
     .modal-footer { padding: 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-cancelar { background: #edf2f7; color: #4a5568; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     .btn-guardar { background: #1414b8; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .modal-cerrar { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #9ca3af; }
+    .modal-titulo { margin: 0; font-size: 1.1rem; color: #1a202c; }
 
     @@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 </style>
@@ -206,37 +228,51 @@
     private List<Proveedor> proveedores = new();
     private List<Proveedor> filteredProveedores = new();
     private List<Movimiento> historial = new();
-    
+
     private string searchProducto = "", searchProveedor = "", productoNombreSeleccionado = "", proveedorNombreSeleccionado = "", error = "";
-    private bool mostrarResultadosProducto = false, mostrarResultadosProveedor = false, mostrarAlertaVisual = false;
-    private int productoId, proveedorId, cantidad = 1, existenciasActuales = 0, umbralAvisoManual = 3;
+    private bool mostrarResultadosProducto, mostrarResultadosProveedor, mostrarAlertaVisual;
+    private int productoId, proveedorId, cantidad = 1, existenciasActuales, umbralAvisoManual = 3;
     private decimal precioCompra;
-    private bool cargando = true, mostrarModal = false, guardando = false;
+    private bool cargando = true, mostrarModal, guardando, esEdicion;
+    private int? movimientoEditandoId;
+    private int cantidadOriginal; // para recalcular stock al editar
+
     private DialogModal DialogRef = default!;
 
     protected override async Task OnInitializedAsync() => await Cargar();
 
-    private async Task Cargar() {
+    private async Task Cargar()
+    {
         cargando = true;
-        productos = await ProductoService.ObtenerTodosAsync();
+        productos  = await ProductoService.ObtenerTodosAsync();
         proveedores = await Context.Proveedores.ToListAsync();
-        historial = await MovimientoService.ObtenerTodosAsync();
-        cargando = false;
+        historial  = await MovimientoService.ObtenerTodosAsync();
+        cargando   = false;
     }
 
-    private void OnSearchProducto(ChangeEventArgs e) {
+    // ── Búsquedas ──────────────────────────────────────────────────────────────
+    private void OnSearchProducto(ChangeEventArgs e)
+    {
         searchProducto = e.Value?.ToString() ?? "";
         mostrarResultadosProducto = !string.IsNullOrEmpty(searchProducto);
-        filteredProductos = productos.Where(p => p.Nombre.Contains(searchProducto, StringComparison.OrdinalIgnoreCase) || p.Codigo.Contains(searchProducto, StringComparison.OrdinalIgnoreCase)).Take(5).ToList();
+        filteredProductos = productos
+            .Where(p => p.Nombre.Contains(searchProducto, StringComparison.OrdinalIgnoreCase) ||
+                        p.Codigo.Contains(searchProducto, StringComparison.OrdinalIgnoreCase))
+            .Take(5).ToList();
     }
 
-    private void OnSearchProveedor(ChangeEventArgs e) {
+    private void OnSearchProveedor(ChangeEventArgs e)
+    {
         searchProveedor = e.Value?.ToString() ?? "";
         mostrarResultadosProveedor = !string.IsNullOrEmpty(searchProveedor);
-        filteredProveedores = proveedores.Where(p => p.Nombre.Contains(searchProveedor, StringComparison.OrdinalIgnoreCase) || (p.RNC != null && p.RNC.Contains(searchProveedor))).Take(5).ToList();
+        filteredProveedores = proveedores
+            .Where(p => p.Nombre.Contains(searchProveedor, StringComparison.OrdinalIgnoreCase) ||
+                        (p.RNC != null && p.RNC.Contains(searchProveedor)))
+            .Take(5).ToList();
     }
 
-    private void SeleccionarProducto(Producto p) {
+    private void SeleccionarProducto(Producto p)
+    {
         productoId = p.Id;
         productoNombreSeleccionado = $"{p.Nombre} ({p.Codigo})";
         existenciasActuales = p.Existencias;
@@ -244,48 +280,139 @@
         ValidarAlertaManual(null);
     }
 
-    private void SeleccionarProveedor(Proveedor prov) {
+    private void SeleccionarProveedor(Proveedor prov)
+    {
         proveedorId = prov.Id;
         proveedorNombreSeleccionado = prov.Nombre;
         mostrarResultadosProveedor = false;
     }
 
-    private void ValidarAlertaManual(ChangeEventArgs? e) {
-        // Lógica de comparación en memoria
-        mostrarAlertaVisual = (existenciasActuales + cantidad) <= umbralAvisoManual;
+    private void ValidarAlertaManual(ChangeEventArgs? e)
+        => mostrarAlertaVisual = (existenciasActuales + cantidad) <= umbralAvisoManual;
+
+    // ── Modales ────────────────────────────────────────────────────────────────
+    private void AbrirModalNuevo()
+    {
+        Limpiar();
+        esEdicion = false;
+        mostrarModal = true;
     }
 
-    private async Task Guardar() {
-        if (productoId == 0 || proveedorId == 0) { error = "Complete los campos obligatorios."; return; }
-        guardando = true;
-        try {
-            var authState = await AuthProvider.GetAuthenticationStateAsync();
-            var user = authState.User.Identity?.Name ?? "Admin";
-            
-            bool res = await MovimientoService.RegistrarEntradaAsync(productoId, cantidad, precioCompra, proveedorId, "Entrada de Inventario", user);
-            
-            if (res) {
-                await Cargar(); CerrarModal();
-                await DialogRef.ShowSuccessAsync("Éxito", "Existencias actualizadas correctamente.");
-            }
-        } catch (Exception ex) { error = ex.Message; }
-        finally { guardando = false; }
-    }
+    private void AbrirModalEditar(Movimiento mov)
+    {
+        Limpiar();
+        esEdicion = true;
+        movimientoEditandoId = mov.Id;
+        cantidadOriginal = mov.Cantidad;
 
-    private async Task Eliminar(Movimiento mov) {
-        if (await DialogRef.ShowConfirmAsync("Anular", "¿Restaurar stock anterior?", "Anular", "🗑️")) {
-            var m = await Context.Movimientos.Include(x => x.Producto).FirstOrDefaultAsync(x => x.Id == mov.Id);
-            if (m != null && m.Producto != null) {
-                m.Producto.Existencias -= m.Cantidad;
-                Context.Movimientos.Remove(m);
-                await Context.SaveChangesAsync(); await Cargar();
-            }
+        // Pre-cargar producto
+        productoId = mov.ProductoId;
+        productoNombreSeleccionado = $"{mov.Producto?.Nombre} ({mov.Producto?.Codigo})";
+        existenciasActuales = mov.Producto?.Existencias ?? 0;
+
+        // Pre-cargar proveedor
+        if (mov.ProveedorId.HasValue)
+        {
+            proveedorId = mov.ProveedorId.Value;
+            proveedorNombreSeleccionado = mov.Proveedor?.Nombre ?? "";
         }
+
+        cantidad = mov.Cantidad;
+        precioCompra = mov.PrecioCompra ?? 0;
+        mostrarModal = true;
     }
 
-    private void AbrirModalNuevo() { Limpiar(); mostrarModal = true; }
     private void CerrarModal() => mostrarModal = false;
     private void ResetProducto() { productoId = 0; searchProducto = ""; existenciasActuales = 0; }
     private void ResetProveedor() { proveedorId = 0; searchProveedor = ""; }
-    private void Limpiar() { productoId = 0; proveedorId = 0; cantidad = 1; precioCompra = 0; searchProducto = ""; searchProveedor = ""; error = ""; mostrarAlertaVisual = false; }
+
+    private void Limpiar()
+    {
+        productoId = 0; proveedorId = 0; cantidad = 1; precioCompra = 0;
+        searchProducto = ""; searchProveedor = "";
+        productoNombreSeleccionado = ""; proveedorNombreSeleccionado = "";
+        error = ""; mostrarAlertaVisual = false;
+        movimientoEditandoId = null; cantidadOriginal = 0;
+    }
+
+    // ── Guardar ────────────────────────────────────────────────────────────────
+    private async Task Guardar()
+    {
+        if (productoId == 0 || proveedorId == 0) { error = "Complete los campos obligatorios."; return; }
+        if (cantidad <= 0) { error = "La cantidad debe ser mayor a cero."; return; }
+
+        guardando = true;
+        error = "";
+
+        try
+        {
+            if (esEdicion && movimientoEditandoId.HasValue)
+            {
+                await GuardarEdicion();
+            }
+            else
+            {
+                await GuardarNuevo();
+            }
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { guardando = false; }
+    }
+
+    private async Task GuardarNuevo()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User.Identity?.Name ?? "Admin";
+
+        bool res = await MovimientoService.RegistrarEntradaAsync(productoId, cantidad, precioCompra, proveedorId, "Entrada de Inventario", user);
+        if (res)
+        {
+            await Cargar();
+            CerrarModal();
+            await DialogRef.ShowSuccessAsync("Éxito", "Existencias actualizadas correctamente.");
+        }
+    }
+
+    private async Task GuardarEdicion()
+    {
+        var mov = await Context.Movimientos
+            .Include(m => m.Producto)
+            .FirstOrDefaultAsync(m => m.Id == movimientoEditandoId);
+
+        if (mov == null) { error = "Movimiento no encontrado."; return; }
+
+        // Revertir stock anterior y aplicar el nuevo
+        int diferencia = cantidad - cantidadOriginal;
+        if (mov.Producto != null)
+            mov.Producto.Existencias += diferencia;
+
+        mov.ProductoId  = productoId;
+        mov.ProveedorId = proveedorId;
+        mov.Cantidad    = cantidad;
+        mov.PrecioCompra = precioCompra;
+
+        await Context.SaveChangesAsync();
+        await Cargar();
+        CerrarModal();
+        await DialogRef.ShowSuccessAsync("Actualizado", "La entrada fue editada correctamente.");
+    }
+
+    // ── Eliminar ───────────────────────────────────────────────────────────────
+    private async Task Eliminar(Movimiento mov)
+    {
+        if (await DialogRef.ShowConfirmAsync("Anular", "¿Restaurar stock anterior?", "Anular", "🗑️"))
+        {
+            var m = await Context.Movimientos
+                .Include(x => x.Producto)
+                .FirstOrDefaultAsync(x => x.Id == mov.Id);
+
+            if (m != null && m.Producto != null)
+            {
+                m.Producto.Existencias -= m.Cantidad;
+                Context.Movimientos.Remove(m);
+                await Context.SaveChangesAsync();
+                await Cargar();
+            }
+        }
+    }
 }

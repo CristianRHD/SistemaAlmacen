@@ -94,7 +94,7 @@
                     <label class="form-label">Buscar producto</label>
                     <div class="search-wrap">
                         <span class="search-icon">🔍</span>
-                        <input type="text" @bind="searchQuery" @oninput="OnSearchProducto"
+                        <input type="text" value="@searchQuery" @oninput="OnSearchProducto"
                                class="form-input search-input" placeholder="Nombre o código del producto..." />
                         @if (mostrarSugerencias && filteredProductos.Any())
                         {
@@ -122,7 +122,7 @@
                         </div>
                         <div class="add-controls">
                             <label>Cantidad:</label>
-                            <input type="number" @bind="cantidadADespachar" class="input-cantidad"
+                            <input type="number" @bind="cantidadADespachar" @bind:event="oninput" class="input-cantidad"
                                    min="1" max="@productoSeleccionado.Existencias" />
                             <button @onclick="AgregarALista" class="btn-add-item">Añadir</button>
                         </div>
@@ -415,7 +415,6 @@
                 + '<td>' + i.codigo + '</td>'
                 + '<td>' + i.nombre + '</td>'
                 + '<td style="text-align:center">' + i.cantidad + '</td>'
-                + '<td style="text-align:right">' + fmt(i.precioUnitario) + '</td>'
                 + '<td style="text-align:right">' + fmt(i.totalItem) + '</td>'
                 + '</tr>';
         }).join('');
@@ -465,17 +464,15 @@
             + '<table>'
             +   '<thead><tr>'
             +     '<th style="width:14%">C\u00F3digo</th>'
-            +     '<th style="width:40%">Descripci\u00F3n</th>'
+            +     '<th style="width:44%">Descripci\u00F3n</th>'
             +     '<th style="width:12%;text-align:center">Cant.</th>'
-            +     '<th style="width:17%;text-align:right">Precio Unit.</th>'
-            +     '<th style="width:17%;text-align:right">Total</th>'
+            +     '<th style="width:30%;text-align:right">Costo x Lote</th>'
             +   '</tr></thead>'
             +   '<tbody>' + rows + '</tbody>'
             +   '<tfoot>'
             +     '<tr class="total-row">'
             +       '<td colspan="2" style="text-align:right">TOTALES:</td>'
             +       '<td style="text-align:center">' + totalUnidades + ' uds.</td>'
-            +       '<td></td>'
             +       '<td style="text-align:right">' + fmt(totalValor) + '</td>'
             +     '</tr>'
             +   '</tfoot>'

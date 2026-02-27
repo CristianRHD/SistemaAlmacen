@@ -16,7 +16,6 @@
 
 <div class="reportes-wrapper">
 
-    
     <div class="no-print page-header">
         <div class="header-left">
             <h1 class="main-title">Centro de Reportes</h1>
@@ -28,7 +27,6 @@
         </div>
     </div>
 
-    
     <div class="no-print filters-card">
         <div class="filters-title">Filtros</div>
         <div class="filters-grid">
@@ -90,7 +88,6 @@
             </div>
         </div>
 
-        
         <div class="summary-cards">
             <div class="s-card s-card-in">
                 <div class="s-label">Total Entradas</div>
@@ -113,7 +110,6 @@
         </div>
     </div>
 
-    
     <div class="print-area">
         <div class="print-header">
             <div>
@@ -161,20 +157,14 @@
                                 {
                                     <span class="tag-prov">@(m.Proveedor?.Nombre ?? "—")</span>
                                 }
-                                else
-                                {
-                                    <span class="tag-na">—</span>
-                                }
+                                else { <span class="tag-na">—</span> }
                             </td>
                             <td class="col-dest">
                                 @if (m.Tipo == "Salida")
                                 {
                                     <span class="tag-dest">@(m.Destino ?? "—")</span>
                                 }
-                                else
-                                {
-                                    <span class="tag-na">—</span>
-                                }
+                                else { <span class="tag-na">—</span> }
                             </td>
                             <td class="col-num">@m.Cantidad</td>
                             <td class="col-num">RD$ @((m.PrecioCompra ?? 0).ToString("N2"))</td>
@@ -246,92 +236,86 @@
 
     .reportes-wrapper { padding: 28px; font-family: var(--sans); }
 
-    /* HEADER */
-    .page-header {
+    .reportes-wrapper .page-header {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 22px; padding-bottom: 18px; border-bottom: 2px solid var(--border);
     }
-    .main-title { font-size: 1.55rem; font-weight: 700; color: var(--text); margin: 0; }
-    .sub-title { color: var(--muted); font-size: 0.85rem; margin: 4px 0 0; }
+    .reportes-wrapper .main-title { font-size: 1.55rem; font-weight: 700; color: #1e293b !important; margin: 0; }
+    .reportes-wrapper .sub-title  { color: #64748b !important; font-size: 0.85rem; margin: 4px 0 0; }
 
-    .action-buttons { display: flex; gap: 10px; }
-    .btn-action {
+    .reportes-wrapper .action-buttons { display: flex; gap: 10px; }
+    .reportes-wrapper .btn-action {
         padding: 10px 20px; border: none; border-radius: var(--radius);
         font-weight: 600; font-size: 0.875rem; cursor: pointer;
         font-family: var(--sans); transition: opacity 0.15s, transform 0.1s;
     }
-    .btn-action:hover { opacity: 0.88; transform: translateY(-1px); }
-    .btn-print { background: var(--blue); color: white; }
-    .btn-excel { background: #107c41; color: white; }
+    .reportes-wrapper .btn-action:hover { opacity: 0.88; transform: translateY(-1px); }
+    .reportes-wrapper .btn-print { background: var(--blue); color: white !important; }
+    .reportes-wrapper .btn-excel { background: #107c41; color: white !important; }
 
-    /* FILTROS */
-    .filters-card {
-        background: var(--white); border: 1px solid var(--border);
+    .reportes-wrapper .filters-card {
+        background: #fff; border: 1px solid var(--border);
         border-radius: 14px; padding: 22px 24px; margin-bottom: 24px;
         box-shadow: var(--shadow);
     }
-    .filters-title {
+    .reportes-wrapper .filters-title {
         font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px;
+        letter-spacing: 0.08em; color: #64748b !important; margin-bottom: 16px;
     }
-    .filters-grid {
+    .reportes-wrapper .filters-grid {
         display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;
     }
-    .f-group label {
+    .reportes-wrapper .f-group label {
         display: block; font-size: 0.75rem; font-weight: 600;
-        color: var(--muted); text-transform: uppercase;
+        color: #64748b !important; text-transform: uppercase;
         letter-spacing: 0.05em; margin-bottom: 6px;
     }
-    .f-group select, .f-group input {
+    .reportes-wrapper .f-group select,
+    .reportes-wrapper .f-group input {
         width: 100%; padding: 9px 12px;
         border: 1.5px solid var(--border); border-radius: 8px;
-        font-size: 0.875rem; font-family: var(--sans); color: var(--text);
-        background: var(--bg); box-sizing: border-box;
-        transition: border-color 0.2s;
+        font-size: 0.875rem; font-family: var(--sans);
+        color: #1e293b !important; background: #f8fafc !important;
+        box-sizing: border-box; transition: border-color 0.2s;
     }
-    .f-group select:focus, .f-group input:focus {
+    .reportes-wrapper .f-group select:focus,
+    .reportes-wrapper .f-group input:focus {
         outline: none; border-color: var(--blue);
         box-shadow: 0 0 0 3px rgba(20,20,184,0.08);
     }
-    .f-actions { display: flex; align-items: flex-end; gap: 8px; }
-    .btn-search {
-        flex: 1; padding: 9px; background: var(--blue); color: white;
+    .reportes-wrapper .f-actions { display: flex; align-items: flex-end; gap: 8px; }
+    .reportes-wrapper .btn-search {
+        flex: 1; padding: 9px; background: var(--blue); color: white !important;
         border: none; border-radius: 8px; font-weight: 600;
         cursor: pointer; font-family: var(--sans); font-size: 0.85rem;
     }
-    .btn-clear {
-        flex: 1; padding: 9px; background: var(--bg); color: var(--muted);
+    .reportes-wrapper .btn-clear {
+        flex: 1; padding: 9px; background: #f8fafc; color: #64748b !important;
         border: 1.5px solid var(--border); border-radius: 8px;
         font-weight: 600; cursor: pointer; font-family: var(--sans); font-size: 0.85rem;
     }
 
-    /* TARJETAS RESUMEN */
-    .summary-cards {
-        display: grid; grid-template-columns: repeat(3, 1fr);
-        gap: 14px; margin-top: 20px;
+    .reportes-wrapper .summary-cards {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px;
     }
-    .s-card {
-        padding: 16px 18px; border-radius: var(--radius);
-        border-left: 4px solid transparent;
-    }
-    .s-card-in  { background: var(--green-light); border-color: var(--green); }
-    .s-card-out { background: var(--red-light);   border-color: var(--red); }
-    .s-card-net { background: var(--blue-light);  border-color: var(--blue); }
-    .s-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; }
-    .s-value { font-size: 1.2rem; font-weight: 700; color: var(--text); font-family: var(--mono); }
-    .s-count { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .reportes-wrapper .s-card { padding: 16px 18px; border-radius: var(--radius); border-left: 4px solid transparent; }
+    .reportes-wrapper .s-card-in  { background: #ecfdf5; border-color: #059669; }
+    .reportes-wrapper .s-card-out { background: #fef2f2; border-color: #dc2626; }
+    .reportes-wrapper .s-card-net { background: #eef2ff; border-color: #1414b8; }
+    .reportes-wrapper .s-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b !important; margin-bottom: 6px; }
+    .reportes-wrapper .s-value { font-size: 1.2rem; font-weight: 700; color: #1e293b !important; font-family: var(--mono); }
+    .reportes-wrapper .s-count { font-size: 0.75rem; color: #64748b !important; margin-top: 4px; }
 
-    /* TABLA */
     .table-wrap {
         background: var(--white); border-radius: 14px;
         border: 1px solid var(--border); overflow-x: auto; box-shadow: var(--shadow);
     }
     .report-table { width: 100%; min-width: 1000px; border-collapse: collapse; font-family: var(--sans); }
     .report-table thead tr { background: var(--bg); border-bottom: 2px solid var(--border); }
-    .report-table th {
+    .reportes-wrapper .report-table th {
         padding: 13px 14px; text-align: left;
         font-size: 0.72rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.06em; color: #64748b !important;
     }
     .report-table td {
         padding: 11px 14px; border-bottom: 1px solid var(--border);
@@ -362,7 +346,6 @@
     .val-out { color: var(--red);   font-weight: 600; }
     .val-neto { color: var(--blue); font-weight: 700; font-size: 1rem; font-family: var(--mono); }
 
-    /* TFOOT */
     .foot-entradas td, .foot-salidas td, .foot-neto td {
         padding: 10px 14px; font-size: 0.875rem; font-weight: 600;
     }
@@ -370,24 +353,61 @@
     .foot-salidas td  { background: var(--red-light); }
     .foot-neto td     { background: var(--blue-light); font-size: 0.95rem; border-top: 2px solid var(--blue); }
 
-    /* IMPRESIÓN */
+    /* Solo visible al imprimir */
     .print-header, .print-footer { display: none; }
 
+    /* ═══════════════════════════════════════════
+       IMPRESIÓN — Sin scroll, tabla completa
+    ═══════════════════════════════════════════ */
     @@media print {
-        header, nav, .sidebar, .no-print { display: none !important; }
-        body { background: white !important; margin: 0 !important; padding: 0 !important; }
-        .reportes-wrapper { padding: 0 !important; }
-        .table-wrap {
-            box-shadow: none !important; border: none !important;
-            border-radius: 0 !important;
-            overflow: visible !important;   /* sin scroll al imprimir */
+
+        /* Ocultar navegación y filtros */
+        header, nav, aside, .sidebar,
+        .no-print { display: none !important; }
+
+        /* Quitar overflow de TODOS los ancestros posibles */
+        html,
+        body,
+        .reportes-wrapper,
+        .print-area,
+        .table-wrap,
+        [class*="layout"],
+        [class*="content"],
+        [class*="main"],
+        [class*="page"],
+        [class*="wrapper"],
+        [class*="container"] {
+            overflow: visible !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            height: auto !important;
+            max-height: none !important;
+            max-width: none !important;
+            width: auto !important;
         }
+
+        html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .reportes-wrapper { padding: 0 !important; }
+
+        /* Tabla ocupa todo el ancho del papel */
+        .table-wrap {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
         .report-table {
-            min-width: 0 !important;        /* se adapta al papel */
+            min-width: 0 !important;
             width: 100% !important;
-            table-layout: fixed !important;
+            table-layout: auto !important;
             font-size: 7.5pt !important;
         }
+
         .report-table th, .report-table td {
             padding: 5px 6px !important;
             word-break: break-word !important;
@@ -520,7 +540,6 @@
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Reporte_AlmaTrack");
 
-            // Encabezados
             string[] headers = { "Fecha", "Tipo", "Código", "Producto", "Categoría",
                                   "Proveedor", "Destino", "Cant.", "Precio Unitario",
                                   "Total Operación", "Responsable" };
@@ -535,9 +554,8 @@
             int row = 2;
             foreach (var m in movimientosFiltrados)
             {
-                // Para salidas el valor es negativo en el Excel
                 decimal signo = m.Tipo == "Salida" ? -1 : 1;
-ws.Cell(row, 1).Value  = m.Fecha;
+                ws.Cell(row, 1).Value  = m.Fecha;
                 ws.Cell(row, 2).Value  = m.Tipo;
                 ws.Cell(row, 3).Value  = m.Producto?.Codigo;
                 ws.Cell(row, 4).Value  = m.Producto?.Nombre;
@@ -549,7 +567,6 @@ ws.Cell(row, 1).Value  = m.Fecha;
                 ws.Cell(row, 10).Value = signo * (m.PrecioCompra ?? 0) * m.Cantidad;
                 ws.Cell(row, 11).Value = m.UsuarioResponsable;
 
-                // Colorear filas por tipo
                 if (m.Tipo == "Salida")
                     ws.Range(row, 1, row, headers.Length).Style.Fill.BackgroundColor = XLColor.FromHtml("#fff5f5");
                 else
@@ -558,7 +575,6 @@ ws.Cell(row, 1).Value  = m.Fecha;
                 row++;
             }
 
-            // Fila de totales
             ws.Cell(row, 9).Value = "TOTAL NETO:";
             ws.Cell(row, 9).Style.Font.Bold = true;
             ws.Cell(row, 10).Value =

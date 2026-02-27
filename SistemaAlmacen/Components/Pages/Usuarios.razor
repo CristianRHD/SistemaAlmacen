@@ -45,7 +45,7 @@
                             <th>Usuario</th>
                             <th>Nombre Completo</th>
                             <th>Email</th>
-                            <th>Rol Base</th>
+                            <th>Rol</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -63,14 +63,19 @@
                                     </span>
                                 </td>
                                 <td class="table-cell">
-                                    
+                                    <span class="@(u.Activo ? "badge-activo" : "badge-inactivo")">
+                                        @(u.Activo ? "✅ Activo" : "❌ Inactivo")
+                                    </span>
                                 </td>
                                 <td class="table-cell">
                                     <div class="acciones-flex">
-                                        <button @onclick="() => Editar(u)" class="btn-edit" title="Configurar">⚙️</button>
+                                        <button @onclick="() => Editar(u)" class="btn-accion btn-edit" title="Editar">✏️</button>
                                         @if (u.UserName != "admin")
                                         {
-                                            <button @onclick="() => CambiarEstado(u)" class="btn-lock">@(u.Activo ? "🔒" : "🔓")</button>
+                                            <button @onclick="() => CambiarEstado(u)" class="btn-accion btn-lock" title="@(u.Activo ? "Desactivar" : "Activar")">
+                                                @(u.Activo ? "🔒" : "🔓")
+                                            </button>
+                                            <button @onclick="() => Eliminar(u)" class="btn-accion btn-delete" title="Eliminar">🗑️</button>
                                         }
                                     </div>
                                 </td>
@@ -93,7 +98,6 @@
             </div>
 
             <div class="modal-body">
-                @* 1. DATOS DE IDENTIDAD *@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Nombre de Usuario *</label>
@@ -112,7 +116,6 @@
                     <input type="text" @bind="nombreCompleto" class="form-input" placeholder="Nombre y Apellidos" />
                 </div>
 
-                @* 2. DATOS DE CONEXIÓN (IMPORTANTE) *@
                 <div class="form-group">
                     <label class="form-label">Correo Electrónico *</label>
                     <input type="email" @bind="email" class="form-input" placeholder="usuario@almatrack.com" />
@@ -123,16 +126,18 @@
                         @(esEdicion ? "Nueva Contraseña (Opcional)" : "Contraseña de Acceso *")
                     </label>
                     <input type="password" @bind="password" class="form-input" placeholder="Mínimo 6 caracteres" />
-                    @if(esEdicion) { <small style="color: #64748b;">Deje en blanco para mantener la actual.</small> }
+                    @if (esEdicion) { <small style="color: #64748b;">Deje en blanco para mantener la actual.</small> }
                 </div>
 
-                @* 3. PERMISOS GRANULARES *@
                 <div class="permisos-panel">
-                    <h4 class="permisos-titulo">🛠️ Capacidades Manuales de @rolSeleccionado</h4>
+                    <h4 class="permisos-titulo">🛠️ Capacidades de @rolSeleccionado</h4>
                     <div class="permisos-buttons-grid">
                         @foreach (var func in funcionesDelSistema)
                         {
-                          
+                            <button class="btn-permiso @(permisosManuales.Contains(func.Id) ? "active" : "")"
+                                    @onclick="() => AlternarPermiso(func.Id)">
+                                @func.Nombre
+                            </button>
                         }
                     </div>
                 </div>
@@ -157,35 +162,55 @@
     .usuarios-container { max-width: 1400px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid #1414b8; padding-bottom: 15px; }
     .page-title { margin: 0; font-size: 1.8rem; color: #1e293b; }
-    .btn-primary, .btn-save { background: #1414b8; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-primary { background: #1414b8; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-save { background: #1414b8; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
     .btn-secondary { background: #e2e8f0; color: #475569; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
     .stat-value { font-size: 2rem; font-weight: 800; color: #1e293b; }
     .stat-label { color: #64748b; font-weight: 600; }
+
     .table-container { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
     .data-table { width: 100%; border-collapse: collapse; }
     .table-header { background: #f8fafc; text-align: left; }
-    .table-header th { padding: 15px; border-bottom: 2px solid #e2e8f0; color: #475569; }
-    .table-row { border-bottom: 1px solid #f1f5f9; }
+    .table-header th { padding: 15px; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.85rem; text-transform: uppercase; }
+    .table-row { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
+    .table-row:hover { background: #fafbff; }
     .table-cell { padding: 12px 15px; }
-    .badge-rol { color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-    .badge-activo { color: #059669; background: #dcfce7; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-    .badge-inactivo { color: #dc2626; background: #fee2e2; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+
+    .badge-rol { color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+    .badge-activo { color: #059669; background: #dcfce7; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    .badge-inactivo { color: #dc2626; background: #fee2e2; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+
+    .acciones-flex { display: flex; gap: 8px; }
+    .btn-accion { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+    .btn-edit   { background: #ff9800; color: white; }
+    .btn-lock   { background: #64748b; color: white; }
+    .btn-delete { background: #ef4444; color: white; }
+    .btn-accion:hover { opacity: 0.85; transform: translateY(-1px); }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; width: 95%; max-width: 650px; border-radius: 15px; overflow-y: auto; max-height: 90vh; }
     .modal-header { padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { margin: 0; font-size: 1.1rem; font-weight: 700; }
+    .btn-close { background: none; border: 1px solid #e2e8f0; border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1.1rem; color: #64748b; }
     .modal-body { padding: 20px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #f1f5f9; margin-top: 15px; }
+
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .form-group { margin-bottom: 15px; }
     .form-label { display: block; font-weight: bold; margin-bottom: 5px; color: #475569; font-size: 0.9rem; }
-    .form-input, .form-select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .form-input, .form-select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; }
+
     .permisos-panel { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin: 15px 0; }
-    .permisos-titulo { margin-top: 0; font-size: 0.9rem; color: #1414b8; }
+    .permisos-titulo { margin-top: 0; font-size: 0.9rem; color: #1414b8; font-weight: 700; }
     .permisos-buttons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .btn-permiso { padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.8rem; text-align: left; }
+    .btn-permiso { padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.8rem; text-align: left; transition: all 0.15s; }
     .btn-permiso.active { border-color: #1414b8; background: #eef2ff; color: #1414b8; }
+
     .error-msg { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: bold; }
+    .loading-text { text-align: center; padding: 40px; color: #64748b; }
 </style>
 
 @code {
@@ -193,15 +218,15 @@
     private List<RolInfo> rolesDisponibles = new();
     private List<FuncionSistema> funcionesDelSistema = new()
     {
-        new FuncionSistema { Id = "VIEW_INV", Nombre = "Ver Inventario" },
+        new FuncionSistema { Id = "VIEW_INV",  Nombre = "Ver Inventario" },
         new FuncionSistema { Id = "EDIT_PROD", Nombre = "Gestionar Productos" },
-        new FuncionSistema { Id = "REG_IN", Nombre = "Registrar Entradas" },
-        new FuncionSistema { Id = "REG_OUT", Nombre = "Registrar Salidas" },
-        new FuncionSistema { Id = "VIEW_REP", Nombre = "Ver Reportes" },
+        new FuncionSistema { Id = "REG_IN",    Nombre = "Registrar Entradas" },
+        new FuncionSistema { Id = "REG_OUT",   Nombre = "Registrar Salidas" },
+        new FuncionSistema { Id = "VIEW_REP",  Nombre = "Ver Reportes" },
         new FuncionSistema { Id = "ADMIN_SEC", Nombre = "Seguridad" }
     };
 
-    private List<string> permisosManuales = new(); 
+    private List<string> permisosManuales = new();
     private string userName = "", nombreCompleto = "", rolSeleccionado = "Empleado", error = "", email = "", password = "", userId = "";
     private bool cargando = true, mostrarModal = false, esEdicion = false, guardando = false;
     private DialogModal DialogRef = default!;
@@ -225,24 +250,41 @@
         else permisosManuales.Add(id);
     }
 
-    private void AbrirModalNuevo()
-    {
-        esEdicion = false;
-        Limpiar();
-        mostrarModal = true;
-    }
+    private void AbrirModalNuevo() { esEdicion = false; Limpiar(); mostrarModal = true; }
 
     private void Editar(UsuarioDto u)
     {
-        esEdicion = true;
-        userId = u.Id;
-        userName = u.UserName;
+        esEdicion    = true;
+        userId       = u.Id;
+        userName     = u.UserName;
         nombreCompleto = u.NombreCompleto;
-        email = u.Email;
+        email        = u.Email;
         rolSeleccionado = u.Rol;
-        password = "";
-        permisosManuales = new List<string> { "VIEW_INV" }; // Aquí cargarías los permisos reales del usuario
+        password     = "";
+        permisosManuales = new List<string> { "VIEW_INV" };
         mostrarModal = true;
+    }
+
+    private async Task Eliminar(UsuarioDto u)
+    {
+        bool confirmar = await DialogRef.ShowConfirmAsync(
+            "Eliminar Usuario",
+            $"¿Estás seguro de eliminar la cuenta de '{u.UserName}'? Esta acción no se puede deshacer.",
+            "Eliminar",
+            "🗑️");
+
+        if (!confirmar) return;
+
+        var (success, message) = await UsuarioService.EliminarUsuarioAsync(u.Id);
+        if (success)
+        {
+            await DialogRef.ShowSuccessAsync("Eliminado", $"La cuenta de '{u.UserName}' fue eliminada.");
+            await Cargar();
+        }
+        else
+        {
+            await DialogRef.ShowErrorAsync("Error", message);
+        }
     }
 
     private async Task Guardar()
@@ -284,19 +326,10 @@
                 await DialogRef.ShowSuccessAsync("Completado", mensaje);
                 await Cargar();
             }
-            else
-            {
-                error = mensaje;
-            }
+            else { error = mensaje; }
         }
-        catch (Exception ex)
-        {
-            error = $"Error del servidor: {ex.Message}";
-        }
-        finally
-        {
-            guardando = false;
-        }
+        catch (Exception ex) { error = $"Error del servidor: {ex.Message}"; }
+        finally { guardando = false; }
     }
 
     private async Task CambiarEstado(UsuarioDto u)

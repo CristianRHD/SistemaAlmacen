@@ -1,0 +1,244 @@
+﻿@page "/configuracion-empresa"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@namespace SistemaAlmacen.Components.Pages
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using SistemaAlmacen.Data
+@using EmpresaModel = SistemaAlmacen.Models.ConfiguracionEmpresa
+@inject ApplicationDbContext Context
+@inject IJSRuntime JS
+
+<DialogModal @ref="DialogRef" />
+
+<PageTitle>Configuración de Empresa - AlmaTrack</PageTitle>
+
+<div class="config-container">
+    <div class="config-header">
+        <h1 class="config-titulo">🏢 Configuración de Empresa</h1>
+        <p class="config-sub">Esta información aparecerá en los conduces de salida</p>
+    </div>
+
+    @if (cargando)
+    {
+        <p>⏳ Cargando...</p>
+    }
+    else if (config != null)
+    {
+        <div class="config-grid">
+
+            @* COLUMNA IZQUIERDA - Formulario *@
+            <div class="form-panel">
+                <div class="form-group">
+                    <label class="form-label">Nombre de la Empresa *</label>
+                    <input type="text" @bind="config.NombreEmpresa" class="form-input" placeholder="Ej: Distribuidora El Caribe SRL" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Slogan / Descripción</label>
+                    <input type="text" @bind="config.Slogan" class="form-input" placeholder="Ej: Distribución de Electrodomésticos" />
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Iniciales (para logo de texto)</label>
+                        <input type="text" @bind="config.Iniciales" class="form-input" maxlength="4" placeholder="Ej: DC" />
+                        <small class="form-hint">Se usa si no hay logo subido</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">RNC</label>
+                        <input type="text" @bind="config.RNC" class="form-input" placeholder="Ej: 1-30-12345-6" />
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" @bind="config.Telefono" class="form-input" placeholder="Ej: 809-555-0100" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" @bind="config.Email" class="form-input" placeholder="info@empresa.com" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" @bind="config.Direccion" class="form-input" placeholder="Av. 27 de Febrero, Santo Domingo" />
+                </div>
+
+                @* SUBIR LOGO *@
+                <div class="form-group">
+                    <label class="form-label">Logo de la Empresa</label>
+                    <div class="upload-area" @onclick="TriggerFileInput">
+                        @if (!string.IsNullOrEmpty(config.LogoBase64))
+                        {
+                            <img src="data:@config.LogoMediaType;base64,@config.LogoBase64" class="logo-preview" alt="Logo" />
+                            <p class="upload-hint">Clic para cambiar el logo</p>
+                        }
+                        else
+                        {
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">🖼️</span>
+                                <p>Clic para subir logo</p>
+                                <small>PNG, JPG — máx 1MB recomendado</small>
+                            </div>
+                        }
+                    </div>
+                    <InputFile id="logoInput" OnChange="OnLogoSeleccionado" accept="image/*" style="display:none" />
+
+                    @if (!string.IsNullOrEmpty(config.LogoBase64))
+                    {
+                        <button @onclick="QuitarLogo" class="btn-quitar-logo">🗑️ Quitar logo</button>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="error-msg">❌ @error</div>
+                }
+
+                <div class="form-actions">
+                    <button @onclick="Guardar" disabled="@guardando" class="btn-guardar">
+                        @(guardando ? "⏳ Guardando..." : "💾 Guardar Configuración")
+                    </button>
+                </div>
+            </div>
+
+            @* COLUMNA DERECHA - Preview conduce *@
+            <div class="preview-panel">
+                <h3 class="preview-titulo">👁️ Vista previa en conduce</h3>
+                <div class="conduce-preview">
+                    <div class="prev-header">
+                        <div class="prev-brand">
+                            @if (!string.IsNullOrEmpty(config.LogoBase64))
+                            {
+                                <img src="data:@config.LogoMediaType;base64,@config.LogoBase64" class="prev-logo-img" alt="Logo" />
+                            }
+                            else
+                            {
+                                <div class="prev-logo-box">@config.Iniciales</div>
+                            }
+                            <div>
+                                <div class="prev-nombre">@config.NombreEmpresa?.ToUpper()</div>
+                                <div class="prev-slogan">@config.Slogan</div>
+                            </div>
+                        </div>
+                        <div class="prev-ref">
+                            <div class="prev-ref-label">Conduce de Salida</div>
+                            <div class="prev-ref-num">SAL-20260227-0900</div>
+                            <div class="prev-ref-date">27/02/2026</div>
+                        </div>
+                    </div>
+                    <div class="prev-info">
+                        <div class="prev-info-item"><span class="prev-info-label">RNC</span><span>@(config.RNC ?? "---")</span></div>
+                        <div class="prev-info-item"><span class="prev-info-label">Teléfono</span><span>@(config.Telefono ?? "---")</span></div>
+                        <div class="prev-info-item"><span class="prev-info-label">Dirección</span><span>@(config.Direccion ?? "---")</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+</div>
+
+<style>
+    .config-container { max-width: 1300px; margin: 0 auto; padding: 28px; font-family: 'Segoe UI', sans-serif; }
+    .config-header { margin-bottom: 28px; border-bottom: 3px solid #1414b8; padding-bottom: 16px; }
+    .config-titulo { margin: 0; font-size: 1.8rem; color: #1e293b; }
+    .config-sub { margin: 5px 0 0; color: #64748b; font-size: 0.9rem; }
+
+    .config-grid { display: grid; grid-template-columns: 1fr 420px; gap: 30px; align-items: start; }
+    @@media (max-width: 900px) { .config-grid { grid-template-columns: 1fr; } }
+
+    .form-panel { background: white; border-radius: 14px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .form-group { margin-bottom: 18px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .form-label { display: block; font-weight: 600; margin-bottom: 6px; color: #374151; font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .form-input { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; transition: border-color 0.2s; }
+    .form-input:focus { outline: none; border-color: #1414b8; }
+    .form-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; display: block; }
+
+    .upload-area { border: 2px dashed #c7d2fe; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .upload-area:hover { border-color: #1414b8; background: #eef2ff; }
+    .upload-placeholder { color: #94a3b8; }
+    .upload-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .upload-hint { font-size: 0.8rem; color: #94a3b8; margin-top: 6px; }
+    .logo-preview { max-height: 80px; max-width: 200px; object-fit: contain; border-radius: 6px; }
+    .btn-quitar-logo { margin-top: 8px; background: #fee2e2; color: #dc2626; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; }
+
+    .error-msg { background: #fef2f2; color: #dc2626; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
+    .form-actions { display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+    .btn-guardar { background: #1414b8; color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.95rem; }
+    .btn-guardar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* PREVIEW */
+    .preview-panel { position: sticky; top: 20px; }
+    .preview-titulo { font-size: 1rem; font-weight: 700; color: #475569; margin: 0 0 14px 0; }
+    .conduce-preview { background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e2e8f0; }
+    .prev-header { background: white; padding: 16px 18px; border-bottom: 3px solid #1414b8; display: flex; justify-content: space-between; align-items: center; }
+    .prev-brand { display: flex; align-items: center; gap: 10px; }
+    .prev-logo-box { width: 44px; height: 44px; background: #1414b8; color: white; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; }
+    .prev-logo-img { width: 44px; height: 44px; object-fit: contain; border-radius: 6px; }
+    .prev-nombre { font-size: 1rem; font-weight: 900; color: #1414b8; }
+    .prev-slogan { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+    .prev-ref { text-align: right; }
+    .prev-ref-label { font-size: 0.68rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; }
+    .prev-ref-num { font-size: 0.9rem; font-weight: 900; color: #1414b8; font-family: monospace; }
+    .prev-ref-date { font-size: 0.75rem; color: #64748b; }
+    .prev-info { padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; }
+    .prev-info-item { display: flex; gap: 10px; font-size: 0.82rem; }
+    .prev-info-label { font-weight: 700; color: #64748b; min-width: 70px; text-transform: uppercase; font-size: 0.72rem; }
+</style>
+
+@code {
+    private EmpresaModel? config;
+    private bool cargando = true, guardando = false;
+    private string error = "";
+    private DialogModal DialogRef = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await Context.ConfiguracionEmpresas.FirstOrDefaultAsync();
+        if (config == null)
+        {
+            config = new EmpresaModel();
+            Context.ConfiguracionEmpresas.Add(config);
+            await Context.SaveChangesAsync();
+        }
+        cargando = false;
+    }
+
+    private async Task OnLogoSeleccionado(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file.Size > 2_000_000) { error = "El logo no debe superar 2MB."; return; }
+
+        using var stream = file.OpenReadStream(2_000_000);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        config!.LogoBase64   = Convert.ToBase64String(ms.ToArray());
+        config!.LogoMediaType = file.ContentType;
+        error = "";
+    }
+
+    private void QuitarLogo() { config!.LogoBase64 = null; config!.LogoMediaType = "image/png"; }
+
+    private async Task TriggerFileInput()
+        => await JS.InvokeVoidAsync("eval", "document.getElementById('logoInput').click()");
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(config?.NombreEmpresa)) { error = "El nombre de la empresa es obligatorio."; return; }
+        guardando = true;
+        error = "";
+        try
+        {
+            Context.ConfiguracionEmpresas.Update(config!);
+            await Context.SaveChangesAsync();
+            await DialogRef.ShowSuccessAsync("Guardado", "Configuración actualizada correctamente.");
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { guardando = false; }
+    }
+}

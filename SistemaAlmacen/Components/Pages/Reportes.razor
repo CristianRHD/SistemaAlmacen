@@ -223,7 +223,7 @@
         --green-light: #ecfdf5;
         --red: #dc2626;
         --red-light: #fef2f2;
-        --text: black;
+        --text: #1e293b;
         --muted: #64748b;
         --border: #e2e8f0;
         --bg: #f8fafc;
@@ -266,8 +266,8 @@
         display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;
     }
     .reportes-wrapper .f-group label {
-        display: block; font-size: 0.75rem; font-weight: 600;
-        color: #64748b !important; text-transform: uppercase;
+        display: block; font-size: 0.75rem; font-weight: 700 !important;
+        color: #1e293b !important; text-transform: uppercase;
         letter-spacing: 0.05em; margin-bottom: 6px;
     }
     .reportes-wrapper .f-group select,
@@ -314,8 +314,8 @@
     .report-table thead tr { background: var(--bg); border-bottom: 2px solid var(--border); }
     .reportes-wrapper .report-table th {
         padding: 13px 14px; text-align: left;
-        font-size: 0.72rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.06em; color: #64748b !important;
+        font-size: 0.72rem; font-weight: 700 !important;
+        text-transform: uppercase; letter-spacing: 0.06em; color: #1e293b !important;
     }
     .report-table td {
         padding: 11px 14px; border-bottom: 1px solid var(--border);
@@ -356,7 +356,9 @@
     /* Solo visible al imprimir */
     .print-header, .print-footer { display: none; }
 
-  
+    /* ═══════════════════════════════════════════
+       IMPRESIÓN — Sin scroll, tabla completa
+    ═══════════════════════════════════════════ */
     @@media print {
 
         /* Ocultar navegación y filtros */
@@ -526,6 +528,19 @@
         fechaInicio = DateTime.Now.AddMonths(-1);
         fechaFin = DateTime.Now;
         movimientosFiltrados = movimientos;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                document.querySelectorAll('.f-group label, .report-table th').forEach(el => {
+                    el.style.setProperty('color', '#1e293b', 'important');
+                    el.style.setProperty('font-weight', '700', 'important');
+                });
+            ");
+        }
     }
 
     private async Task LanzarImpresion() =>

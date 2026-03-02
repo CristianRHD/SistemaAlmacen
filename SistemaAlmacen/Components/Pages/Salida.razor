@@ -427,6 +427,7 @@
             + '.logo { width:52px; height:52px; background:#1414b8; color:white; font-size:17pt; font-weight:900; display:flex; align-items:center; justify-content:center; border-radius:9px; print-color-adjust:exact; -webkit-print-color-adjust:exact; }'
             + '.brand-name { font-size:22pt; font-weight:900; color:#1414b8; }'
             + '.brand-sub { font-size:7.5pt; color:#555; text-transform:uppercase; letter-spacing:.1em; margin-top:3px; }'
+            + '.brand-info { font-size:7.5pt; color:#444; margin-top:5px; line-height:1.7; }'
             + '.ref-box { text-align:right; }'
             + '.ref-label { font-size:8pt; text-transform:uppercase; letter-spacing:.1em; color:#555; font-weight:700; }'
             + '.ref-num { font-size:14pt; font-weight:900; color:#1414b8; font-family:Courier New,monospace; margin:3px 0; }'
@@ -450,7 +451,15 @@
             + '@@media print { @@page { size:letter portrait; margin:1.5cm 2cm; } body { padding:0; } }'
             + '</style></head><body>'
             + '<div class="header">'
-            +   '<div class="brand">' + logoHtml + '<div><div class="brand-name">' + data.empresaNombre + '</div><div class="brand-sub">' + data.empresaSlogan + '</div></div></div>'
+            +   '<div class="brand">' + logoHtml + '<div>'
+            +     '<div class="brand-name">' + data.empresaNombre + '</div>'
+            +     '<div class="brand-sub">' + data.empresaSlogan + '</div>'
+            +     '<div class="brand-info">'
+            +       (data.empresaRNC       ? 'RNC: ' + data.empresaRNC + '&nbsp;&nbsp;&nbsp;' : '')
+            +       (data.empresaTelefono  ? '&#9990; ' + data.empresaTelefono + '&nbsp;&nbsp;&nbsp;' : '')
+            +       (data.empresaDireccion ? '&#128205; ' + data.empresaDireccion : '')
+            +     '</div>'
+            +   '</div></div>'
             +   '<div class="ref-box"><div class="ref-label">Conduce de Salida</div><div class="ref-num">' + data.referencia + '</div><div class="ref-date">' + data.fecha + '</div></div>'
             + '</div>'
             + '<div class="info-grid">'
@@ -664,12 +673,27 @@
         var grupo = historialSalidas.Where(m => m.Observaciones == referencia).ToList();
         if (!grupo.Any()) return;
 
-        listaSalida = grupo.Select(m => new ItemSalida
-        {
-            ProductoCodigo = m.Producto?.Codigo ?? "",
-            ProductoNombre = m.Producto?.Nombre ?? "",
-            Cantidad       = m.Cantidad,
-            PrecioUnitario = m.PrecioCompra ?? 0
+        // Cargar todos los movimientos para buscar precios de entrada si la salida no los tiene
+        var todosMovs = await MovimientoService.ObtenerTodosAsync();
+
+        listaSalida = grupo.Select(m => {
+            // Usar precio guardado en la salida; si es 0 o null, buscar última entrada
+            var precio = m.PrecioCompra ?? 0;
+            if (precio == 0)
+            {
+                precio = todosMovs
+                    .Where(x => x.ProductoId == m.ProductoId && x.Tipo == "Entrada" && (x.PrecioCompra ?? 0) > 0)
+                    .OrderByDescending(x => x.Fecha)
+                    .Select(x => x.PrecioCompra ?? 0)
+                    .FirstOrDefault();
+            }
+            return new ItemSalida
+            {
+                ProductoCodigo = m.Producto?.Codigo ?? "",
+                ProductoNombre = m.Producto?.Nombre ?? "",
+                Cantidad       = m.Cantidad,
+                PrecioUnitario = precio
+            };
         }).ToList();
 
         destino           = grupo.First().Destino ?? "";

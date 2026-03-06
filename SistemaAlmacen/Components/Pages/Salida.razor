@@ -28,39 +28,68 @@
         </button>
     </div>
 
+    @* BUSCADOR GLOBAL *@
+    <div class="buscador-global">
+        <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Buscar por referencia, destino o responsable..." 
+                   @bind="terminoBusqueda" 
+                   @bind:event="oninput" />
+            @if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+            {
+                <button class="clear-btn" @onclick="LimpiarBusqueda">✕</button>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            <p class="resultados-info">📊 Mostrando @DespachosFiltrados.Count() de @historialSalidas.GroupBy(m => m.Observaciones).Count() despachos</p>
+        }
+    </div>
+
     <div class="tabla-container">
-        <table class="tabla-almatrack">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Referencia</th>
-                    <th>Destino</th>
-                    <th>Artículos</th>
-                    <th>Responsable</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var grupo in historialSalidas
-                    .GroupBy(m => m.Observaciones)
-                    .OrderByDescending(g => g.Max(m => m.Id)))
-                {
+        @if (DespachosFiltrados.Any())
+        {
+            <table class="tabla-almatrack">
+                <thead>
                     <tr>
-                        <td class="col-fecha">@grupo.First().Fecha.ToString("dd/MM/yyyy")</td>
-                        <td><span class="ref-tag">@grupo.Key</span></td>
-                        <td>@grupo.First().Destino</td>
-                        <td><span class="badge-count">@grupo.Count() ítems</span></td>
-                        <td class="col-usuario">@grupo.First().UsuarioResponsable</td>
-                        <td>
-                            <button class="btn-accion" title="Imprimir Conduce"
-                                    @onclick="() => Reimprimir(grupo.Key ?? string.Empty)">
-                                🖨️ Imprimir
-                            </button>
-                        </td>
+                        <th>Fecha</th>
+                        <th>Referencia</th>
+                        <th>Destino</th>
+                        <th>Artículos</th>
+                        <th>Responsable</th>
+                        <th>Acciones</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var grupo in DespachosFiltrados)
+                    {
+                        <tr>
+                            <td class="col-fecha">@grupo.First().Fecha.ToString("dd/MM/yyyy")</td>
+                            <td><span class="ref-tag">@grupo.Key</span></td>
+                            <td>@grupo.First().Destino</td>
+                            <td><span class="badge-count">@grupo.Count() ítems</span></td>
+                            <td class="col-usuario">@grupo.First().UsuarioResponsable</td>
+                            <td>
+                                <button class="btn-accion" title="Imprimir Conduce"
+                                        @onclick="() => Reimprimir(grupo.Key ?? string.Empty)">
+                                    🖨️ Imprimir
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="sin-resultados">
+                <p class="sin-resultados-icon">🔍</p>
+                <p class="sin-resultados-texto">No se encontraron despachos que coincidan con "<strong>@terminoBusqueda</strong>"</p>
+                <button class="btn-limpiar-busqueda" @onclick="LimpiarBusqueda">Limpiar búsqueda</button>
+            </div>
+        }
     </div>
 </div>
 
@@ -240,6 +269,94 @@
         font-family: var(--sans); transition: background 0.2s, transform 0.1s;
     }
     .btn-nuevo:hover { background: var(--blue-mid); transform: translateY(-1px); }
+
+    /* BUSCADOR GLOBAL */
+    .buscador-global { 
+        background: white; 
+        padding: 20px; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+        margin-bottom: 20px; 
+        border: 1px solid var(--border);
+    }
+    .search-input-wrapper { 
+        position: relative; 
+        display: flex; 
+        align-items: center; 
+        background: var(--bg); 
+        border: 2px solid var(--border); 
+        border-radius: var(--radius); 
+        padding: 12px 15px; 
+        transition: all 0.3s; 
+    }
+    .search-input-wrapper:focus-within { 
+        border-color: var(--blue); 
+        box-shadow: 0 0 0 3px rgba(20, 20, 184, 0.1); 
+    }
+    .search-icon { 
+        font-size: 1.2rem; 
+        margin-right: 10px; 
+        color: var(--muted); 
+    }
+    .search-input { 
+        flex: 1; 
+        border: none; 
+        background: transparent; 
+        font-size: 1rem; 
+        color: var(--text); 
+        outline: none; 
+        font-family: var(--sans);
+    }
+    .search-input::placeholder { color: #94a3b8; }
+    .clear-btn { 
+        background: var(--danger); 
+        color: white; 
+        border: none; 
+        border-radius: 50%; 
+        width: 24px; 
+        height: 24px; 
+        cursor: pointer; 
+        font-size: 0.9rem; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        transition: all 0.2s; 
+    }
+    .clear-btn:hover { background: #dc2626; transform: scale(1.1); }
+    .resultados-info { 
+        margin-top: 10px; 
+        font-size: 0.9rem; 
+        color: var(--muted); 
+        font-weight: 500; 
+    }
+
+    /* SIN RESULTADOS */
+    .sin-resultados { 
+        text-align: center; 
+        padding: 60px 20px; 
+        background: white; 
+        border-radius: 12px; 
+    }
+    .sin-resultados-icon { 
+        font-size: 4rem; 
+        margin-bottom: 15px; 
+        opacity: 0.3; 
+    }
+    .sin-resultados-texto { 
+        color: var(--muted); 
+        font-size: 1.1rem; 
+        margin-bottom: 20px; 
+    }
+    .btn-limpiar-busqueda { 
+        background: var(--blue); 
+        color: white; 
+        border: none; 
+        padding: 10px 20px; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        font-weight: 600; 
+        font-family: var(--sans);
+    }
 
     .tabla-container {
         background: var(--white); border-radius: 14px;
@@ -510,6 +627,33 @@
     private bool mostrarSugerencias = false, guardando = false, mostrarModal = false;
     private DialogModal DialogRef = default!;
 
+    // BUSCADOR GLOBAL
+    private string terminoBusqueda = "";
+
+    private IEnumerable<IGrouping<string?, Movimiento>> DespachosFiltrados
+    {
+        get
+        {
+            var grupos = historialSalidas
+                .GroupBy(m => m.Observaciones)
+                .OrderByDescending(g => g.Max(m => m.Id));
+
+            if (string.IsNullOrWhiteSpace(terminoBusqueda))
+                return grupos;
+
+            var termino = terminoBusqueda.ToLower();
+
+            return grupos.Where(g =>
+                (g.Key?.ToLower().Contains(termino) ?? false) ||
+                (g.First().Destino?.ToLower().Contains(termino) ?? false) ||
+                (g.First().UsuarioResponsable?.ToLower().Contains(termino) ?? false) ||
+                g.First().Fecha.ToString("dd/MM/yyyy").Contains(termino)
+            );
+        }
+    }
+
+    private void LimpiarBusqueda() => terminoBusqueda = "";
+
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
@@ -673,11 +817,9 @@
         var grupo = historialSalidas.Where(m => m.Observaciones == referencia).ToList();
         if (!grupo.Any()) return;
 
-        // Cargar todos los movimientos para buscar precios de entrada si la salida no los tiene
         var todosMovs = await MovimientoService.ObtenerTodosAsync();
 
         listaSalida = grupo.Select(m => {
-            // Usar precio guardado en la salida; si es 0 o null, buscar última entrada
             var precio = m.PrecioCompra ?? 0;
             if (precio == 0)
             {

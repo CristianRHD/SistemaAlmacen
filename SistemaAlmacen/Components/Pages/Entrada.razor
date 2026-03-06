@@ -21,6 +21,26 @@
         </button>
     </div>
 
+    @* BUSCADOR GLOBAL *@
+    <div class="buscador-global">
+        <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Buscar por producto, código, proveedor, RNC o responsable..." 
+                   @bind="terminoBusqueda" 
+                   @bind:event="oninput" />
+            @if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+            {
+                <button class="clear-btn" @onclick="LimpiarBusqueda">✕</button>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            <p class="resultados-info">📊 Mostrando @MovimientosFiltrados.Count() de @historial.Count(m => m.Tipo == "Entrada") entradas</p>
+        }
+    </div>
+
     @if (cargando)
     {
         <div class="cargando-container">
@@ -30,40 +50,51 @@
     else
     {
         <div class="tabla-container">
-            <div class="tabla-wrapper">
-                <table class="tabla-entradas">
-                    <thead class="tabla-head">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Producto / Código</th>
-                            <th>Proveedor / RNC</th>
-                            <th>Cant.</th>
-                            <th>Costo Por Lotes</th>
-                            <th>Responsable</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var mov in historial.Where(m => m.Tipo == "Entrada").OrderByDescending(m => m.Fecha))
-                        {
-                            <tr class="tabla-fila">
-                                <td class="tabla-td">@mov.Fecha.ToString("dd/MM/yyyy")</td>
-                                <td class="tabla-td"><strong>@mov.Producto?.Nombre</strong><br/><small>@mov.Producto?.Codigo</small></td>
-                                <td class="tabla-td">@(mov.Proveedor?.Nombre ?? "N/A")<br/><small>@mov.Proveedor?.RNC</small></td>
-                                <td class="tabla-td"><span class="cantidad-badge">+@mov.Cantidad</span></td>
-                                <td class="tabla-td">RD$ @(mov.PrecioCompra?.ToString("N2") ?? "0.00")</td>
-                                <td class="tabla-td"><span class="user-badge">👤 @mov.UsuarioResponsable</span></td>
-                                <td class="tabla-td">
-                                    <div class="acciones-container">
-                                        <button @onclick="() => AbrirModalEditar(mov)" title="Editar" class="btn-accion btn-editar">✏️</button>
-                                        <button @onclick="() => Eliminar(mov)" title="Eliminar" class="btn-accion btn-eliminar">🗑️</button>
-                                    </div>
-                                </td>
+            @if (MovimientosFiltrados.Any())
+            {
+                <div class="tabla-wrapper">
+                    <table class="tabla-entradas">
+                        <thead class="tabla-head">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto / Código</th>
+                                <th>Proveedor / RNC</th>
+                                <th>Cant.</th>
+                                <th>Costo Por Lotes</th>
+                                <th>Responsable</th>
+                                <th>Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var mov in MovimientosFiltrados)
+                            {
+                                <tr class="tabla-fila">
+                                    <td class="tabla-td">@mov.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td class="tabla-td"><strong>@mov.Producto?.Nombre</strong><br/><small>@mov.Producto?.Codigo</small></td>
+                                    <td class="tabla-td">@(mov.Proveedor?.Nombre ?? "N/A")<br/><small>@mov.Proveedor?.RNC</small></td>
+                                    <td class="tabla-td"><span class="cantidad-badge">+@mov.Cantidad</span></td>
+                                    <td class="tabla-td">RD$ @(mov.PrecioCompra?.ToString("N2") ?? "0.00")</td>
+                                    <td class="tabla-td"><span class="user-badge">👤 @mov.UsuarioResponsable</span></td>
+                                    <td class="tabla-td">
+                                        <div class="acciones-container">
+                                            <button @onclick="() => AbrirModalEditar(mov)" title="Editar" class="btn-accion btn-editar">✏️</button>
+                                            <button @onclick="() => Eliminar(mov)" title="Eliminar" class="btn-accion btn-eliminar">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="sin-resultados">
+                    <p class="sin-resultados-icon">🔍</p>
+                    <p class="sin-resultados-texto">No se encontraron entradas que coincidan con "<strong>@terminoBusqueda</strong>"</p>
+                    <button class="btn-limpiar-busqueda" @onclick="LimpiarBusqueda">Limpiar búsqueda</button>
+                </div>
+            }
         </div>
     }
 </div>
@@ -180,6 +211,91 @@
     .entrada-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1414b8; padding-bottom: 15px; margin-bottom: 25px; }
     .btn-nuevo { background: #1414b8; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
+    /* BUSCADOR GLOBAL */
+    .buscador-global { 
+        background: white; 
+        padding: 20px; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+        margin-bottom: 20px; 
+    }
+    .search-input-wrapper { 
+        position: relative; 
+        display: flex; 
+        align-items: center; 
+        background: #f8fafc; 
+        border: 2px solid #e2e8f0; 
+        border-radius: 10px; 
+        padding: 12px 15px; 
+        transition: all 0.3s; 
+    }
+    .search-input-wrapper:focus-within { 
+        border-color: #1414b8; 
+        box-shadow: 0 0 0 3px rgba(20, 20, 184, 0.1); 
+    }
+    .search-icon { 
+        font-size: 1.2rem; 
+        margin-right: 10px; 
+        color: #64748b; 
+    }
+    .search-input { 
+        flex: 1; 
+        border: none; 
+        background: transparent; 
+        font-size: 1rem; 
+        color: #1e293b; 
+        outline: none; 
+    }
+    .search-input::placeholder { color: #94a3b8; }
+    .clear-btn { 
+        background: #ef4444; 
+        color: white; 
+        border: none; 
+        border-radius: 50%; 
+        width: 24px; 
+        height: 24px; 
+        cursor: pointer; 
+        font-size: 0.9rem; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        transition: all 0.2s; 
+    }
+    .clear-btn:hover { background: #dc2626; transform: scale(1.1); }
+    .resultados-info { 
+        margin-top: 10px; 
+        font-size: 0.9rem; 
+        color: #64748b; 
+        font-weight: 500; 
+    }
+
+    /* SIN RESULTADOS */
+    .sin-resultados { 
+        text-align: center; 
+        padding: 60px 20px; 
+        background: white; 
+        border-radius: 12px; 
+    }
+    .sin-resultados-icon { 
+        font-size: 4rem; 
+        margin-bottom: 15px; 
+        opacity: 0.3; 
+    }
+    .sin-resultados-texto { 
+        color: #64748b; 
+        font-size: 1.1rem; 
+        margin-bottom: 20px; 
+    }
+    .btn-limpiar-busqueda { 
+        background: #1414b8; 
+        color: white; 
+        border: none; 
+        padding: 10px 20px; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        font-weight: 600; 
+    }
+
     .tabla-container { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; }
     .tabla-entradas { width: 100%; border-collapse: collapse; }
     .tabla-head { background: #f8fafc; text-align: left; }
@@ -235,7 +351,34 @@
     private decimal precioCompra;
     private bool cargando = true, mostrarModal, guardando, esEdicion;
     private int? movimientoEditandoId;
-    private int cantidadOriginal; // para recalcular stock al editar
+    private int cantidadOriginal;
+
+    // BUSCADOR GLOBAL
+    private string terminoBusqueda = "";
+
+    private IEnumerable<Movimiento> MovimientosFiltrados
+    {
+        get
+        {
+            var entradas = historial.Where(m => m.Tipo == "Entrada").OrderByDescending(m => m.Fecha);
+            
+            if (string.IsNullOrWhiteSpace(terminoBusqueda))
+                return entradas;
+
+            var termino = terminoBusqueda.ToLower();
+            
+            return entradas.Where(m =>
+                (m.Producto?.Nombre?.ToLower().Contains(termino) ?? false) ||
+                (m.Producto?.Codigo?.ToLower().Contains(termino) ?? false) ||
+                (m.Proveedor?.Nombre?.ToLower().Contains(termino) ?? false) ||
+                (m.Proveedor?.RNC?.ToLower().Contains(termino) ?? false) ||
+                (m.UsuarioResponsable?.ToLower().Contains(termino) ?? false) ||
+                m.Fecha.ToString("dd/MM/yyyy").Contains(termino)
+            );
+        }
+    }
+
+    private void LimpiarBusqueda() => terminoBusqueda = "";
 
     private DialogModal DialogRef = default!;
 
@@ -305,12 +448,10 @@
         movimientoEditandoId = mov.Id;
         cantidadOriginal = mov.Cantidad;
 
-        // Pre-cargar producto
         productoId = mov.ProductoId;
         productoNombreSeleccionado = $"{mov.Producto?.Nombre} ({mov.Producto?.Codigo})";
         existenciasActuales = mov.Producto?.Existencias ?? 0;
 
-        // Pre-cargar proveedor
         if (mov.ProveedorId.HasValue)
         {
             proveedorId = mov.ProveedorId.Value;
@@ -381,7 +522,6 @@
 
         if (mov == null) { error = "Movimiento no encontrado."; return; }
 
-        // Revertir stock anterior y aplicar el nuevo
         int diferencia = cantidad - cantidadOriginal;
         if (mov.Producto != null)
             mov.Producto.Existencias += diferencia;

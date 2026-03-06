@@ -17,34 +17,37 @@
 <div class="productos-container">
 
     <div class="productos-header">
-        <h1 class="productos-titulo">📦 Gestión de Catálogo Maestro</h1>
+        <h1 class="productos-titulo">📦 Catálogo Maestro</h1>
         <button @onclick="AbrirModalNuevo" class="btn-nuevo">
-            ➕ Registrar Nuevo Artículo
+            ➕ Registrar Artículo
         </button>
     </div>
 
     @if (cargando)
     {
-        <div class="cargando-container">
-            <p class="cargando-texto">⏳ Cargando catálogo de artículos...</p>
+        <div class="estado-container">
+            <p class="estado-texto">⏳ Cargando catálogo...</p>
         </div>
     }
     else if (!productos.Any())
     {
-        <div class="vacio-container">
-            <div class="vacio-icono">📭</div>
-            <h3 class="vacio-titulo">No hay artículos en el catálogo</h3>
-            <p class="vacio-texto">Define aquí los modelos de electrodomésticos y artículos del hogar.</p>
-            <button @onclick="AbrirModalNuevo" class="btn-agregar">
+        <div class="estado-container vacio">
+            <div style="font-size:3.5rem">📭</div>
+            <h3>No hay artículos en el catálogo</h3>
+            <p style="color:#718096">Define aquí los modelos de productos del almacén.</p>
+            <button @onclick="AbrirModalNuevo" class="btn-nuevo" style="margin-top:14px">
                 ➕ Agregar Primer Artículo
             </button>
         </div>
     }
     else
     {
-        <input type="text" @bind="busqueda" @bind:event="oninput" placeholder="🔍 Buscar por nombre, marca o código..." class="input-busqueda" />
+        <input type="text" @bind="busqueda" @bind:event="oninput"
+               placeholder="🔍 Buscar por nombre, marca o código..."
+               class="input-busqueda" />
 
-        <div class="tabla-container">
+        @* ── DESKTOP TABLE ── *@
+        <div class="tabla-container desktop-only">
             <div class="tabla-wrapper">
                 <table class="tabla-productos">
                     <thead class="tabla-head">
@@ -61,26 +64,18 @@
                         @foreach (var p in Filtrados)
                         {
                             <tr class="tabla-fila">
-                                <td class="tabla-td" data-label="Código">
-                                    <strong class="tabla-codigo">@p.Codigo</strong>
+                                <td class="tabla-td"><strong class="tabla-codigo">@p.Codigo</strong></td>
+                                <td class="tabla-td"><span class="tabla-nombre">@p.Nombre</span></td>
+                                <td class="tabla-td">
+                                    <span class="badge-categoria">@(p.Categoria?.Nombre ?? "Sin categoría")</span>
                                 </td>
-                                <td class="tabla-td" data-label="Nombre">
-                                    <span class="tabla-nombre">@p.Nombre</span>
+                                <td class="tabla-td">
+                                    <span class="badge-stock" style="@GetColorStock(p)">@p.Existencias Lotes</span>
                                 </td>
-                                <td class="tabla-td" data-label="Categoría">
-                                    <span class="badge-categoria">
-                                        @(p.Categoria?.Nombre ?? "Sin categoría")
-                                    </span>
-                                </td>
-                                <td class="tabla-td" data-label="Existencias">
-                                    <span class="badge-stock" style="@GetColorStock(p)">
-                                        @p.Existencias Lotes
-                                    </span>
-                                </td>
-                                <td class="tabla-td" data-label="Fecha Registro">
+                                <td class="tabla-td">
                                     <span class="fecha-registro">@p.FechaCreacion.ToString("dd/MM/yyyy")</span>
                                 </td>
-                                <td class="tabla-td" data-label="Acciones">
+                                <td class="tabla-td">
                                     <div class="acciones-container">
                                         <button @onclick="() => Editar(p)" title="Editar" class="btn-accion btn-editar">✏️</button>
                                         <button @onclick="() => Eliminar(p)" title="Eliminar" class="btn-accion btn-eliminar">🗑️</button>
@@ -91,10 +86,38 @@
                     </tbody>
                 </table>
             </div>
-
             <div class="tabla-footer">
                 <p class="tabla-total"><strong>Total:</strong> @Filtrados.Count modelos registrados</p>
             </div>
+        </div>
+
+        @* ── MOBILE CARDS ── *@
+        <div class="mobile-only">
+            <p class="mobile-total">@Filtrados.Count artículos</p>
+            @foreach (var p in Filtrados)
+            {
+                <div class="mobile-card">
+                    <div class="mobile-card-top">
+                        <div>
+                            <div class="mobile-card-title">@p.Nombre</div>
+                            <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                                <span class="mobile-card-code">@p.Codigo</span>
+                                <span class="badge-categoria" style="font-size:0.72rem">@(p.Categoria?.Nombre ?? "Sin cat.")</span>
+                            </div>
+                        </div>
+                        <span class="badge-stock" style="@GetColorStock(p);white-space:nowrap;font-size:0.78rem">
+                            @p.Existencias Lotes
+                        </span>
+                    </div>
+                    <div class="mobile-card-footer">
+                        <span class="fecha-registro">📅 @p.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                        <div class="mobile-card-actions">
+                            <button @onclick="() => Editar(p)" class="btn-accion btn-editar" style="flex:1;text-align:center">✏️ Editar</button>
+                            <button @onclick="() => Eliminar(p)" class="btn-accion btn-eliminar" style="flex:1;text-align:center">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     }
 </div>
@@ -108,23 +131,31 @@
                 <h3 class="modal-titulo">@(esEdicion ? "✏️ Editar" : "➕ Nueva") Ficha de Artículo</h3>
                 <button @onclick="CerrarModal" class="modal-cerrar">×</button>
             </div>
-
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Código del Producto *</label>
-                    <input type="text" @bind="form.Codigo" class="form-input" placeholder="Ej: TV-SAM-55-4K" />
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Nombre / Modelo *</label>
-                    <input type="text" @bind="form.Nombre" class="form-input" placeholder="Ej: Smart TV Samsung 55'' QLED" />
+                    <input type="text" value="@form.Nombre" @oninput="OnNombreChanged" class="form-input" placeholder="Ej: Smart TV Samsung 55'' QLED" />
                 </div>
-
+                <div class="form-group">
+                    <label class="form-label">Código del Producto *</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <input type="text" @bind="form.Codigo" @bind:event="oninput" class="form-input" placeholder="Se genera automáticamente..." style="flex:1" />
+                        <button type="button" @onclick="RegenerarCodigo" class="btn-regenerar" title="Regenerar código">🔄</button>
+                    </div>
+                    <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
+                        💡 Se genera automáticamente, pero puedes editarlo manualmente
+                    </small>
+                    @if (codigoDuplicado)
+                    {
+                        <div class="alerta-duplicado">
+                            ⚠️ Este código ya existe. Se ha agregado un sufijo para evitar duplicados.
+                        </div>
+                    }
+                </div>
                 <div class="form-group">
                     <label class="form-label">Descripción Técnica</label>
                     <textarea @bind="form.Descripcion" rows="3" class="form-textarea" placeholder="Especificaciones, marca, etc."></textarea>
                 </div>
-
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Categoría *</label>
@@ -136,24 +167,21 @@
                             }
                         </select>
                     </div>
-
-                    <div class="form-checkbox" style="align-self: end; padding-bottom: 12px;">
+                    <div class="form-checkbox" style="align-self:end;padding-bottom:12px">
                         <label class="checkbox-label">
                             <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
                             <span class="checkbox-text">Habilitar para inventario</span>
                         </label>
                     </div>
                 </div>
-
-                <div class="nota-maestra" style="background: #fff8e1; border-left: 5px solid #ffc107; padding: 15px; border-radius: 8px; font-size: 0.9rem; color: #856404; margin: 15px 0;">
-                    📌 <strong>Importante:</strong> Los valores de <strong>Existencias</strong> y <strong>Costos de Compra</strong> se gestionan únicamente a través de la sección de <strong>Movimientos</strong>.
+                <div class="nota-maestra">
+                    📌 <strong>Importante:</strong> Las <strong>Existencias</strong> y <strong>Costos de Compra</strong>
+                    se gestionan únicamente a través de <strong>Movimientos</strong>.
                 </div>
-
                 @if (!string.IsNullOrEmpty(error))
                 {
                     <div class="error-mensaje">❌ @error</div>
                 }
-
                 <div class="modal-footer">
                     <button @onclick="CerrarModal" class="btn-cancelar">Cancelar</button>
                     <button @onclick="Guardar" disabled="@guardando" class="btn-guardar">
@@ -166,69 +194,236 @@
 }
 
 <style>
+    /* ── Base ── */
     .productos-container { width: 100%; padding: 20px; }
-    .productos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #2196f3; }
-    .productos-titulo { margin: 0; font-size: 2rem; color: #2d3748; }
-    .btn-nuevo { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
 
-    .cargando-container, .vacio-container { text-align: center; padding: 60px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .input-busqueda { width: 100%; padding: 12px 20px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+    .productos-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 24px; padding-bottom: 18px; border-bottom: 3px solid #2196f3;
+    }
+    .productos-titulo { margin: 0; font-size: 1.9rem; color: #2d3748; }
+    .btn-nuevo {
+        background: linear-gradient(135deg, #2196f3, #1976d2); color: white;
+        padding: 12px 22px; border: none; border-radius: 8px; font-weight: 600;
+        cursor: pointer; white-space: nowrap;
+    }
 
-    .tabla-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .estado-container {
+        text-align: center; padding: 60px 20px; background: white;
+        border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .estado-container.vacio { padding: 80px 20px; }
+    .estado-texto { font-size: 1.1rem; color: #718096; }
+
+    .input-busqueda {
+        width: 100%; padding: 12px 18px; margin-bottom: 18px;
+        border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;
+        box-sizing: border-box;
+    }
+    .input-busqueda:focus { outline: none; border-color: #2196f3; }
+
+    /* ── Desktop table ── */
+    .desktop-only { display: block; }
+    .mobile-only  { display: none; }
+
+    .tabla-container {
+        background: white; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
     .tabla-wrapper { overflow-x: auto; }
-    .tabla-productos { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .tabla-productos { width: 100%; border-collapse: collapse; min-width: 800px; }
     .tabla-head { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; }
-    .tabla-th { padding: 15px; text-align: left; font-weight: 600; }
-    .tabla-fila { border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s; }
-    .tabla-fila:hover { background-color: #f8f9fa; }
-    .tabla-td { padding: 15px; }
+    .tabla-th { padding: 14px 15px; text-align: left; font-weight: 600; }
+    .tabla-fila { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
+    .tabla-fila:hover { background: #f8f9fa; }
+    .tabla-td { padding: 13px 15px; }
 
-    .badge-categoria { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
-    .badge-stock { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
-
-    .fecha-registro { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    .badge-categoria {
+        padding: 4px 11px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+        background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb;
+    }
+    .badge-stock {
+        padding: 4px 11px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+        display: inline-block;
+    }
+    .fecha-registro { font-size: 0.83rem; color: #64748b; font-weight: 500; }
 
     .acciones-container { display: flex; gap: 8px; }
-    .btn-accion { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1.1rem; transition: all 0.2s; }
-    .btn-ver { background: #2196f3; }
-    .btn-editar { background: #ff9800; }
+    .btn-accion {
+        padding: 7px 12px; border: none; border-radius: 6px; cursor: pointer;
+        color: white; font-size: 0.95rem; transition: all 0.2s;
+    }
+    .btn-editar  { background: #ff9800; }
     .btn-eliminar { background: #f44336; }
+    .btn-accion:hover { opacity: 0.85; transform: translateY(-1px); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-contenido { background: white; border-radius: 15px; width: 90%; max-width: 650px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #f0f0f0; }
-    .modal-body { padding: 25px; }
+    .tabla-footer { padding: 14px 18px; border-top: 1px solid #f0f0f0; }
+    .tabla-total { margin: 0; font-size: 0.9rem; color: #4a5568; }
 
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; margin-bottom: 8px; font-weight: 700; color: #1a202c; font-size: 0.95rem; }
-    .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
-    .form-input:focus { outline: none; border-color: #2196f3; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    /* ── Modal ── */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+        display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-contenido {
+        background: white; border-radius: 14px; width: 92%; max-width: 640px;
+        max-height: 92vh; overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 18px 22px; border-bottom: 2px solid #f0f0f0;
+    }
+    .modal-titulo { margin: 0; font-size: 1.15rem; color: #2d3748; font-weight: 700; }
+    .modal-cerrar {
+        background: none; border: none; font-size: 1.8rem;
+        cursor: pointer; color: #718096; line-height: 1;
+    }
+    .modal-body { padding: 22px; }
+    .modal-footer {
+        display: flex; justify-content: flex-end; gap: 12px;
+        padding: 18px 22px; border-top: 2px solid #f0f0f0;
+    }
 
-    .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .checkbox-input { width: 18px; height: 18px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; margin-bottom: 7px; font-weight: 700; color: #1a202c; font-size: 0.92rem; }
+    .form-input, .form-select, .form-textarea {
+        width: 100%; padding: 11px 14px; border: 2px solid #e2e8f0;
+        border-radius: 8px; font-size: 0.97rem; box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none; border-color: #2196f3;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-textarea { resize: vertical; }
+    .form-checkbox { margin-bottom: 18px; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .checkbox-input { width: 17px; height: 17px; cursor: pointer; }
     .checkbox-text { font-weight: 600; color: #4a5568; }
 
-    .modal-footer { display: flex; justify-content: flex-end; gap: 15px; padding: 20px 25px; border-top: 2px solid #f0f0f0; }
-    .btn-cancelar { background: #edf2f7; color: #4a5568; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
-    .btn-guardar { background: #2196f3; color: white; padding: 10px 25px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+    .btn-regenerar {
+        background: #e3f2fd; border: 2px solid #2196f3; color: #2196f3;
+        padding: 10px 14px; border-radius: 8px; cursor: pointer;
+        font-size: 1.1rem; transition: all 0.2s;
+    }
+    .btn-regenerar:hover {
+        background: #2196f3; color: white;
+    }
 
-    .tabla-footer { padding: 15px 20px; border-top: 1px solid #f0f0f0; }
-    .tabla-total { margin: 0; font-size: 0.9rem; color: #4a5568; }
+    .alerta-duplicado {
+        background: #fff3cd; border-left: 4px solid #ffc107;
+        color: #856404; padding: 8px 12px; border-radius: 6px;
+        font-size: 0.85rem; margin-top: 6px;
+        animation: slideIn 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .nota-maestra {
+        background: #fff8e1; border-left: 5px solid #ffc107;
+        padding: 13px 16px; border-radius: 8px; font-size: 0.88rem;
+        color: #856404; margin: 12px 0;
+    }
+    .error-mensaje {
+        background: #fef2f2; color: #b91c1c; padding: 10px;
+        border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;
+    }
+    .btn-cancelar {
+        background: #edf2f7; color: #4a5568; padding: 10px 18px;
+        border-radius: 8px; font-weight: 600; border: none; cursor: pointer;
+    }
+    .btn-guardar {
+        background: #2196f3; color: white; padding: 10px 22px;
+        border-radius: 8px; font-weight: 600; border: none; cursor: pointer;
+    }
+
+    /* ════════════════════════════
+       MOBILE  ≤ 768 px
+    ════════════════════════════ */
+    @@media (max-width: 768px) {
+
+        .productos-container { padding: 14px; }
+
+        .productos-header {
+            flex-direction: column; gap: 12px; align-items: stretch;
+        }
+        .productos-titulo { font-size: 1.3rem; }
+        .btn-nuevo { width: 100%; text-align: center; padding: 13px; font-size: 1rem; }
+
+        /* tabla → ocultar */
+        .desktop-only { display: none; }
+
+        /* cards → mostrar */
+        .mobile-only { display: block; }
+
+        .mobile-total {
+            font-size: 0.8rem; color: #64748b; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .mobile-card {
+            background: white; border-radius: 12px; padding: 14px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+            border-left: 4px solid #2196f3;
+            margin-bottom: 10px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .mobile-card-top {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; gap: 10px;
+        }
+
+        .mobile-card-title {
+            font-size: 0.95rem; font-weight: 700; color: #1a202c;
+        }
+
+        .mobile-card-code {
+            font-size: 0.72rem; font-weight: 700; color: #2196f3;
+            background: #e3f2fd; padding: 2px 8px; border-radius: 5px;
+            font-family: monospace;
+        }
+
+        .mobile-card-footer {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .mobile-card-actions {
+            display: flex; gap: 8px;
+        }
+
+        .mobile-card-actions .btn-accion {
+            flex: 1; text-align: center; padding: 10px;
+            font-size: 0.88rem;
+        }
+
+        /* modal móvil */
+        .modal-contenido { width: 98%; border-radius: 12px 12px 0 0; align-self: flex-end; }
+        .modal-overlay { align-items: flex-end; padding: 0; }
+        .form-grid { grid-template-columns: 1fr; }
+        .modal-body { padding: 16px; }
+        .modal-header { padding: 15px 16px; }
+        .modal-footer { padding: 14px 16px; }
+    }
 </style>
 
 @code {
     private List<Producto> productos = new();
     private List<CategoriaModel> categorias = new();
     private Producto form = new();
-    private Producto? detalle;
     private string busqueda = "";
     private string error = "";
     private bool cargando = true;
     private bool mostrarModal = false;
-    private bool mostrarDetalle = false;
     private bool esEdicion = false;
     private bool guardando = false;
+    private bool codigoEditadoManualmente = false;
+    private bool codigoDuplicado = false;
     private DialogModal DialogRef;
 
     private List<Producto> Filtrados =>
@@ -244,64 +439,123 @@
     private async Task Cargar()
     {
         cargando = true;
-        productos = await ProductoService.ObtenerTodosAsync();
+        productos  = await ProductoService.ObtenerTodosAsync();
         categorias = await ProductoService.ObtenerCategoriasAsync();
-        cargando = false;
+        cargando   = false;
     }
 
     private void AbrirModalNuevo()
     {
         form = new Producto { Activo = true, FechaCreacion = DateTime.Now };
-        esEdicion = false;
-        error = "";
+        esEdicion = false; 
+        error = ""; 
         mostrarModal = true;
+        codigoEditadoManualmente = false;
+        codigoDuplicado = false;
     }
 
     private void Editar(Producto p)
     {
-        form = new Producto
-        {
-            Id            = p.Id,
-            Codigo        = p.Codigo,
-            Nombre        = p.Nombre,
-            Descripcion   = p.Descripcion,
-            CategoriaId   = p.CategoriaId,
-            Activo        = p.Activo,
-            FechaCreacion = p.FechaCreacion
+        form = new Producto {
+            Id = p.Id, Codigo = p.Codigo, Nombre = p.Nombre,
+            Descripcion = p.Descripcion, CategoriaId = p.CategoriaId,
+            Activo = p.Activo, FechaCreacion = p.FechaCreacion
         };
-        esEdicion = true;
-        error = "";
+        esEdicion = true; 
+        error = ""; 
         mostrarModal = true;
+        codigoEditadoManualmente = true;
+        codigoDuplicado = false;
+    }
+
+    private void OnNombreChanged(ChangeEventArgs e)
+    {
+        form.Nombre = e.Value?.ToString() ?? "";
+        
+        // Solo generar código automáticamente si no es edición y no se ha editado manualmente
+        if (!esEdicion && !codigoEditadoManualmente)
+        {
+            GenerarCodigoAutomatico();
+        }
+    }
+
+    private void GenerarCodigoAutomatico()
+    {
+        codigoDuplicado = false;
+
+        if (string.IsNullOrWhiteSpace(form.Nombre))
+        {
+            form.Codigo = "";
+            return;
+        }
+
+        // Convertir a mayúsculas y quitar acentos
+        var nombre = form.Nombre.ToUpper()
+            .Replace("Á", "A").Replace("É", "E").Replace("Í", "I")
+            .Replace("Ó", "O").Replace("Ú", "U").Replace("Ñ", "N");
+
+        // Tomar primeras palabras significativas (máximo 4)
+        var palabras = nombre.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => p.Length > 2) // Ignorar palabras muy cortas
+            .Take(4)
+            .ToList();
+
+        if (!palabras.Any())
+        {
+            // Si no hay palabras significativas, usar las primeras letras del nombre
+            var codigoFallback = new string(nombre.Where(char.IsLetterOrDigit).Take(8).ToArray());
+            form.Codigo = VerificarYAjustarCodigo(codigoFallback);
+            return;
+        }
+
+        // Crear código base con iniciales o primeras letras
+        var codigoBase = string.Join("-", palabras.Select(p => 
+            p.Length <= 3 ? p : p.Substring(0, Math.Min(4, p.Length))
+        ));
+
+        form.Codigo = VerificarYAjustarCodigo(codigoBase);
+    }
+
+    private string VerificarYAjustarCodigo(string codigoBase)
+    {
+        var codigo = codigoBase;
+        int contador = 1;
+        
+        // Verificar si el código ya existe (excluyendo el producto actual en caso de edición)
+        while (productos.Any(p => p.Codigo == codigo && p.Id != form.Id))
+        {
+            codigo = $"{codigoBase}-{contador:D2}";
+            contador++;
+            codigoDuplicado = true;
+        }
+
+        return codigo;
+    }
+
+    private void RegenerarCodigo()
+    {
+        codigoEditadoManualmente = false;
+        GenerarCodigoAutomatico();
     }
 
     private async Task Guardar()
     {
         if (string.IsNullOrWhiteSpace(form.Codigo) || string.IsNullOrWhiteSpace(form.Nombre))
-        {
-            error = "Código y Nombre son requeridos";
-            return;
-        }
+        { error = "Código y Nombre son requeridos"; return; }
+        if (form.CategoriaId == 0) { error = "Seleccione una categoría"; return; }
 
-        if (form.CategoriaId == 0)
-        {
-            error = "Seleccione una categoría";
-            return;
-        }
-
-        guardando = true;
-        error = "";
-
+        guardando = true; error = "";
         try
         {
             bool ok = esEdicion
                 ? await ProductoService.ActualizarAsync(form)
                 : await ProductoService.AgregarAsync(form);
 
-            if (ok)
-            {
-                await Cargar();
-                CerrarModal();
-                await DialogRef.ShowSuccessAsync("Éxito", esEdicion ? "Ficha actualizada" : "Nuevo modelo registrado");
+            if (ok) 
+            { 
+                await Cargar(); 
+                CerrarModal(); 
+                await DialogRef.ShowSuccessAsync("Éxito", esEdicion ? "Ficha actualizada" : "Nuevo modelo registrado"); 
             }
             else { error = "El código ya existe"; }
         }
@@ -313,26 +567,30 @@
     {
         if (p.Existencias > 0)
         {
-            await DialogRef.ShowErrorAsync("Alerta", "No se puede eliminar un artículo que aún tiene existencias físicas en el almacén.");
+            await DialogRef.ShowErrorAsync("Alerta", "No se puede eliminar un artículo con existencias físicas en el almacén.");
             return;
         }
-
         bool ok = await DialogRef.ShowConfirmAsync("Eliminar", $"¿Desea borrar '{p.Nombre}' del catálogo?", "Eliminar", "🗑️");
-        if (ok)
-        {
-            await ProductoService.EliminarAsync(p.Id);
-            await Cargar();
-            await DialogRef.ShowSuccessAsync("Eliminado", "El artículo ha sido removido del catálogo maestro.");
+        if (ok) 
+        { 
+            await ProductoService.EliminarAsync(p.Id); 
+            await Cargar(); 
+            await DialogRef.ShowSuccessAsync("Eliminado", "El artículo ha sido removido del catálogo."); 
         }
     }
 
-    private void VerDetalle(Producto p) { detalle = p; mostrarDetalle = true; }
-    private void CerrarModal() { mostrarModal = false; form = new(); error = ""; }
-    private void CerrarDetalle() { mostrarDetalle = false; detalle = null; }
+    private void CerrarModal() 
+    { 
+        mostrarModal = false; 
+        form = new(); 
+        error = ""; 
+        codigoEditadoManualmente = false;
+        codigoDuplicado = false;
+    }
 
     private string GetColorStock(Producto p)
     {
-        if (p.Existencias == 0) return "background: #fee2e2; color: #b91c1c; border: 1px solid #f87171;";
-        return "background: #dcfce7; color: #15803d; border: 1px solid #4ade80;";
+        if (p.Existencias == 0) return "background:#fee2e2;color:#b91c1c;border:1px solid #f87171;";
+        return "background:#dcfce7;color:#15803d;border:1px solid #4ade80;";
     }
 }

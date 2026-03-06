@@ -26,7 +26,7 @@
     else
     {
         <div class="stats-grid">
-            @foreach (var rol in rolesDisponibles)
+            @foreach (var rol in todosLosRoles)
             {
                 var cantidad = usuarios.Count(u => u.Rol == rol.Nombre);
                 <div class="stat-card" style="border-left: 5px solid @rol.Color">
@@ -46,7 +46,7 @@
                             <th>Nombre Completo</th>
                             <th>Email</th>
                             <th>Rol</th>
-                            <th>Estado</th>
+                           
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -58,15 +58,11 @@
                                 <td class="table-cell">@u.NombreCompleto</td>
                                 <td class="table-cell">@u.Email</td>
                                 <td class="table-cell">
-                                    <span class="badge-rol" style="background: @(rolesDisponibles.FirstOrDefault(r => r.Nombre == u.Rol)?.Color ?? "#666")">
+                                    <span class="badge-rol" style="background: @(todosLosRoles.FirstOrDefault(r => r.Nombre == u.Rol)?.Color ?? "#666")">
                                         @u.Rol
                                     </span>
                                 </td>
-                                <td class="table-cell">
-                                    <span class="@(u.Activo ? "badge-activo" : "badge-inactivo")">
-                                        @(u.Activo ? "✅ Activo" : "❌ Inactivo")
-                                    </span>
-                                </td>
+                              
                                 <td class="table-cell">
                                     <div class="acciones-flex">
                                         <button @onclick="() => Editar(u)" class="btn-accion btn-edit" title="Editar">✏️</button>
@@ -105,9 +101,13 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Rol del Sistema *</label>
-                        <select @bind="rolSeleccionado" class="form-select">
+                        <select @bind="rolSeleccionado" class="form-select" disabled="@esEdicion">
                             @foreach (var r in rolesDisponibles) { <option value="@r.Nombre">@r.Nombre</option> }
                         </select>
+                        @if (esEdicion)
+                        {
+                            <small style="color: #64748b; display: block; margin-top: 5px;">El rol no puede modificarse una vez creado.</small>
+                        }
                     </div>
                 </div>
 
@@ -131,11 +131,15 @@
 
                 <div class="permisos-panel">
                     <h4 class="permisos-titulo">🛠️ Capacidades de @rolSeleccionado</h4>
-                    <div class="permisos-buttons-grid">
-                        @foreach (var func in funcionesDelSistema)
+                    <div class="permisos-info">
+                        <p style="color: #64748b; margin: 0; font-size: 0.85rem;">
+                            Los permisos están predefinidos según el rol asignado y no pueden modificarse individualmente.
+                        </p>
+                    </div>
+                    <div class="permisos-buttons-grid" style="margin-top: 12px;">
+                        @foreach (var func in ObtenerPermisosPorRol(rolSeleccionado))
                         {
-                            <button class="btn-permiso @(permisosManuales.Contains(func.Id) ? "active" : "")"
-                                    @onclick="() => AlternarPermiso(func.Id)">
+                            <button class="btn-permiso active" disabled>
                                 @func.Nombre
                             </button>
                         }
@@ -202,12 +206,14 @@
     .form-group { margin-bottom: 15px; }
     .form-label { display: block; font-weight: bold; margin-bottom: 5px; color: #475569; font-size: 0.9rem; }
     .form-input, .form-select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; }
+    .form-select:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
 
     .permisos-panel { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin: 15px 0; }
     .permisos-titulo { margin-top: 0; font-size: 0.9rem; color: #1414b8; font-weight: 700; }
     .permisos-buttons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .btn-permiso { padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.8rem; text-align: left; transition: all 0.15s; }
     .btn-permiso.active { border-color: #1414b8; background: #eef2ff; color: #1414b8; }
+    .btn-permiso:disabled { cursor: not-allowed; opacity: 0.8; }
 
     .error-msg { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: bold; }
     .loading-text { text-align: center; padding: 40px; color: #64748b; }
@@ -215,7 +221,8 @@
 
 @code {
     private List<UsuarioDto> usuarios = new();
-    private List<RolInfo> rolesDisponibles = new();
+    private List<RolInfo> rolesDisponibles = new(); // Solo para el dropdown (sin Admin)
+    private List<RolInfo> todosLosRoles = new(); // Para mostrar estadísticas (incluye Admin)
     private List<FuncionSistema> funcionesDelSistema = new()
     {
         new FuncionSistema { Id = "VIEW_INV",  Nombre = "Ver Inventario" },
@@ -226,14 +233,20 @@
         new FuncionSistema { Id = "ADMIN_SEC", Nombre = "Seguridad" }
     };
 
-    private List<string> permisosManuales = new();
     private string userName = "", nombreCompleto = "", rolSeleccionado = "Empleado", error = "", email = "", password = "", userId = "";
     private bool cargando = true, mostrarModal = false, esEdicion = false, guardando = false;
     private DialogModal DialogRef = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        rolesDisponibles = UsuarioService.ObtenerRolesDisponibles();
+        // Obtener todos los roles para las estadísticas
+        todosLosRoles = UsuarioService.ObtenerRolesDisponibles();
+        
+        // Filtrar roles disponibles para el dropdown (excluir Admin)
+        rolesDisponibles = todosLosRoles
+            .Where(r => r.Nombre != "Admin")
+            .ToList();
+        
         await Cargar();
     }
 
@@ -244,10 +257,15 @@
         cargando = false;
     }
 
-    private void AlternarPermiso(string id)
+    private List<FuncionSistema> ObtenerPermisosPorRol(string rol)
     {
-        if (permisosManuales.Contains(id)) permisosManuales.Remove(id);
-        else permisosManuales.Add(id);
+        return rol switch
+        {
+            "Admin" => funcionesDelSistema,
+            "Supervisor" => funcionesDelSistema.Where(f => f.Id != "ADMIN_SEC").ToList(),
+            "Empleado" => funcionesDelSistema.Where(f => f.Id == "VIEW_INV" || f.Id == "REG_IN" || f.Id == "REG_OUT").ToList(),
+            _ => new List<FuncionSistema>()
+        };
     }
 
     private void AbrirModalNuevo() { esEdicion = false; Limpiar(); mostrarModal = true; }
@@ -261,7 +279,6 @@
         email        = u.Email;
         rolSeleccionado = u.Rol;
         password     = "";
-        permisosManuales = new List<string> { "VIEW_INV" };
         mostrarModal = true;
     }
 
@@ -340,7 +357,7 @@
     }
 
     private void CerrarModal() => mostrarModal = false;
-    private void Limpiar() { userName = ""; nombreCompleto = ""; email = ""; password = ""; rolSeleccionado = "Empleado"; permisosManuales.Clear(); error = ""; }
+    private void Limpiar() { userName = ""; nombreCompleto = ""; email = ""; password = ""; rolSeleccionado = "Empleado"; error = ""; }
 
     public class FuncionSistema { public string Id { get; set; } = ""; public string Nombre { get; set; } = ""; }
 }

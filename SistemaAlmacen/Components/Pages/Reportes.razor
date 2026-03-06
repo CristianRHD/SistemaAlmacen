@@ -19,7 +19,7 @@
     <div class="no-print page-header">
         <div class="header-left">
             <h1 class="main-title">Centro de Reportes</h1>
-            <p class="sub-title">Auditoría de movimientos, filtros avanzados y exportación</p>
+           
         </div>
         <div class="action-buttons">
             <button @onclick="LanzarImpresion" class="btn-action btn-print">🖨️ Imprimir</button>
@@ -133,7 +133,7 @@
                         <th>Proveedor</th>
                         <th>Destino</th>
                         <th>Cant.</th>
-                        <th>Valor Unitario</th>
+                        <th>Valor por lote</th>
                         <th>Total Operación</th>
                     </tr>
                 </thead>
@@ -424,8 +424,8 @@
         .brand-sub-print { font-size: 8pt; color: #555; text-transform: uppercase; letter-spacing: .08em; }
 
         .report-table th {
-            background: #1414b8 !important; color: white !important;
-            border: 1px solid #000 !important; padding: 7px 9px !important;
+            background: #Dfffe0 !important; color: white !important;
+            border: 1px solid #fff !important; padding: 7px 9px !important;
             font-size: 7.5pt !important; print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
         }

@@ -71,7 +71,10 @@
                 <label>Producto</label>
                 <select @bind="productoId">
                     <option value="0">Todos</option>
-                    @foreach (var prod in productos) { <option value="@prod.Id">@prod.Nombre</option> }
+                    @foreach (var prod in productos) 
+                    { 
+                        <option value="@prod.Id">[@prod.Codigo] @prod.Nombre</option> 
+                    }
                 </select>
             </div>
             <div class="f-group">
@@ -110,6 +113,20 @@
         </div>
     </div>
 
+    @* GRÁFICOS *@
+    <div class="no-print charts-section">
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">📦 Top 10 Productos Más Activos</h3>
+                <canvas id="chartProductos" width="400" height="300"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">📊 Movimientos por Categoría</h3>
+                <canvas id="chartCategorias" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div class="print-area">
         <div class="print-header">
             <div>
@@ -138,39 +155,50 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var m in movimientosFiltrados)
+                    @if (movimientosFiltrados.Any())
+                    {
+                        @foreach (var m in movimientosFiltrados)
+                        {
+                            <tr>
+                                <td class="col-fecha">@m.Fecha.ToString("dd/MM/yy")</td>
+                                <td>
+                                    <span class="tipo-badge @(m.Tipo == "Entrada" ? "badge-in" : "badge-out")">
+                                        @m.Tipo
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="prod-name">@m.Producto?.Nombre</span>
+                                    <span class="prod-code">@m.Producto?.Codigo</span>
+                                </td>
+                                <td>@m.Producto?.Categoria?.Nombre</td>
+                                <td class="col-prov">
+                                    @if (m.Tipo == "Entrada")
+                                    {
+                                        <span class="tag-prov">@(m.Proveedor?.Nombre ?? "—")</span>
+                                    }
+                                    else { <span class="tag-na">—</span> }
+                                </td>
+                                <td class="col-dest">
+                                    @if (m.Tipo == "Salida")
+                                    {
+                                        <span class="tag-dest">@(m.Destino ?? "—")</span>
+                                    }
+                                    else { <span class="tag-na">—</span> }
+                                </td>
+                                <td class="col-num">@m.Cantidad</td>
+                                <td class="col-num">RD$ @((m.PrecioCompra ?? 0).ToString("N2"))</td>
+                                <td class="col-num @(m.Tipo == "Salida" ? "val-out" : "val-in")">
+                                    @if (m.Tipo == "Salida") { <span>− </span> }
+                                    RD$ @(((m.PrecioCompra ?? 0) * m.Cantidad).ToString("N2"))
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td class="col-fecha">@m.Fecha.ToString("dd/MM/yy")</td>
-                            <td>
-                                <span class="tipo-badge @(m.Tipo == "Entrada" ? "badge-in" : "badge-out")">
-                                    @m.Tipo
-                                </span>
-                            </td>
-                            <td>
-                                <span class="prod-name">@m.Producto?.Nombre</span>
-                                <span class="prod-code">@m.Producto?.Codigo</span>
-                            </td>
-                            <td>@m.Producto?.Categoria?.Nombre</td>
-                            <td class="col-prov">
-                                @if (m.Tipo == "Entrada")
-                                {
-                                    <span class="tag-prov">@(m.Proveedor?.Nombre ?? "—")</span>
-                                }
-                                else { <span class="tag-na">—</span> }
-                            </td>
-                            <td class="col-dest">
-                                @if (m.Tipo == "Salida")
-                                {
-                                    <span class="tag-dest">@(m.Destino ?? "—")</span>
-                                }
-                                else { <span class="tag-na">—</span> }
-                            </td>
-                            <td class="col-num">@m.Cantidad</td>
-                            <td class="col-num">RD$ @((m.PrecioCompra ?? 0).ToString("N2"))</td>
-                            <td class="col-num @(m.Tipo == "Salida" ? "val-out" : "val-in")">
-                                @if (m.Tipo == "Salida") { <span>− </span> }
-                                RD$ @(((m.PrecioCompra ?? 0) * m.Cantidad).ToString("N2"))
+                            <td colspan="9" style="text-align:center; padding:40px; color:#64748b;">
+                                📭 No hay registros que coincidan con los filtros aplicados
                             </td>
                         </tr>
                     }
@@ -211,6 +239,8 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
     @@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@300;400;500;600;700&display=swap');
@@ -305,6 +335,34 @@
     .reportes-wrapper .s-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b !important; margin-bottom: 6px; }
     .reportes-wrapper .s-value { font-size: 1.2rem; font-weight: 700; color: #1e293b !important; font-family: var(--mono); }
     .reportes-wrapper .s-count { font-size: 0.75rem; color: #64748b !important; margin-top: 4px; }
+
+    /* GRÁFICOS */
+    .charts-section { margin-bottom: 24px; }
+    .charts-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 20px; 
+    }
+    .chart-card {
+        background: white;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+    .chart-title {
+        margin: 0 0 20px 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text);
+        text-align: center;
+    }
+
+    @@media (max-width: 968px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
     .table-wrap {
         background: var(--white); border-radius: 14px;
@@ -424,7 +482,7 @@
         .brand-sub-print { font-size: 8pt; color: #555; text-transform: uppercase; letter-spacing: .08em; }
 
         .report-table th {
-            background: #Dfffe0 !important; color: white !important;
+            background: #059669 !important; color: white !important;
             border: 1px solid #fff !important; padding: 7px 9px !important;
             font-size: 7.5pt !important; print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
@@ -464,8 +522,8 @@
     private int productoId = 0;
     private string filtroStock = "";
     private string usuarioSeleccionado = "";
-    private DateTime? fechaInicio = DateTime.Now.AddMonths(-1);
-    private DateTime? fechaFin = DateTime.Now;
+    private DateTime? fechaInicio = null;
+    private DateTime? fechaFin = null;
 
     private DialogModal DialogRef = default!;
 
@@ -489,9 +547,25 @@
         movimientosFiltrados = movimientos;
     }
 
-    private void FiltrarTodo()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var q = movimientos.AsQueryable();
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                document.querySelectorAll('.f-group label, .report-table th').forEach(el => {
+                    el.style.setProperty('color', '#1e293b', 'important');
+                    el.style.setProperty('font-weight', '700', 'important');
+                });
+            ");
+            
+            await Task.Delay(1500);
+            await ActualizarGraficos();
+        }
+    }
+
+    private async Task FiltrarTodo()
+    {
+        var q = movimientos.AsEnumerable();
 
         if (!string.IsNullOrEmpty(filtroTipoMov))
             q = q.Where(m => m.Tipo == filtroTipoMov);
@@ -519,27 +593,75 @@
             q = q.Where(m => m.Fecha.Date <= fechaFin.Value.Date);
 
         movimientosFiltrados = q.ToList();
+        StateHasChanged();
+        
+        await Task.Delay(300);
+        await ActualizarGraficos();
     }
 
-    private void LimpiarFiltros()
+    private async Task LimpiarFiltros()
     {
-        filtroTipoMov = ""; categoriaId = 0; proveedorId = 0;
-        productoId = 0; filtroStock = ""; usuarioSeleccionado = "";
-        fechaInicio = DateTime.Now.AddMonths(-1);
-        fechaFin = DateTime.Now;
+        filtroTipoMov = ""; 
+        categoriaId = 0; 
+        proveedorId = 0;
+        productoId = 0; 
+        filtroStock = ""; 
+        usuarioSeleccionado = "";
+        fechaInicio = null;
+        fechaFin = null;
         movimientosFiltrados = movimientos;
+        StateHasChanged();
+        
+        await Task.Delay(300);
+        await ActualizarGraficos();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task ActualizarGraficos()
     {
-        if (firstRender)
+        try
         {
-            await JS.InvokeVoidAsync("eval", @"
-                document.querySelectorAll('.f-group label, .report-table th').forEach(el => {
-                    el.style.setProperty('color', '#1e293b', 'important');
-                    el.style.setProperty('font-weight', '700', 'important');
-                });
-            ");
+            // Datos para productos más activos (entradas + salidas)
+            var topProductos = movimientosFiltrados
+                .Where(m => m.Producto != null)
+                .GroupBy(m => new { m.Producto!.Nombre, m.Producto.Codigo })
+                .Select(g => new { 
+                    Producto = g.Key.Codigo + " - " + g.Key.Nombre,
+                    Entradas = g.Where(x => x.Tipo == "Entrada").Sum(x => x.Cantidad),
+                    Salidas = g.Where(x => x.Tipo == "Salida").Sum(x => x.Cantidad),
+                    Total = g.Sum(x => x.Cantidad)
+                })
+                .OrderByDescending(x => x.Total)
+                .Take(10)
+                .ToList();
+
+            // Datos para categorías
+            var topCategorias = movimientosFiltrados
+                .Where(m => m.Producto?.Categoria != null)
+                .GroupBy(m => m.Producto!.Categoria!.Nombre)
+                .Select(g => new { 
+                    Categoria = g.Key,
+                    Entradas = g.Where(x => x.Tipo == "Entrada").Sum(x => x.Cantidad),
+                    Salidas = g.Where(x => x.Tipo == "Salida").Sum(x => x.Cantidad)
+                })
+                .OrderByDescending(x => x.Entradas + x.Salidas)
+                .Take(8)
+                .ToList();
+
+            var productosLabels = topProductos.Select(x => x.Producto).ToArray();
+            var productosEntradas = topProductos.Select(x => x.Entradas).ToArray();
+            var productosSalidas = topProductos.Select(x => x.Salidas).ToArray();
+
+            var categoriasLabels = topCategorias.Select(x => x.Categoria).ToArray();
+            var categoriasEntradas = topCategorias.Select(x => x.Entradas).ToArray();
+            var categoriasSalidas = topCategorias.Select(x => x.Salidas).ToArray();
+
+            await JS.InvokeVoidAsync("crearGraficosReportes", 
+                productosLabels, productosEntradas, productosSalidas,
+                categoriasLabels, categoriasEntradas, categoriasSalidas);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error actualizando gráficos: {ex.Message}");
         }
     }
 
@@ -610,3 +732,111 @@
         }
     }
 }
+
+<script>
+    window.crearGraficosReportes = function(
+        productosLabels, productosEntradas, productosSalidas,
+        categoriasLabels, categoriasEntradas, categoriasSalidas
+    ) {
+        // Destruir gráficos anteriores si existen
+        if (window.chartProductos && typeof window.chartProductos.destroy === 'function') {
+            window.chartProductos.destroy();
+        }
+        if (window.chartCategorias && typeof window.chartCategorias.destroy === 'function') {
+            window.chartCategorias.destroy();
+        }
+
+        // Gráfico de Productos
+        const ctxProductos = document.getElementById('chartProductos');
+        if (ctxProductos) {
+            window.chartProductos = new Chart(ctxProductos, {
+                type: 'bar',
+                data: {
+                    labels: productosLabels,
+                    datasets: [
+                        {
+                            label: 'Entradas',
+                            data: productosEntradas,
+                            backgroundColor: 'rgba(5, 150, 105, 0.7)',
+                            borderColor: 'rgba(5, 150, 105, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Salidas',
+                            data: productosSalidas,
+                            backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Categorías
+        const ctxCategorias = document.getElementById('chartCategorias');
+        if (ctxCategorias) {
+            window.chartCategorias = new Chart(ctxCategorias, {
+                type: 'bar',
+                data: {
+                    labels: categoriasLabels,
+                    datasets: [
+                        {
+                            label: 'Entradas',
+                            data: categoriasEntradas,
+                            backgroundColor: 'rgba(5, 150, 105, 0.7)',
+                            borderColor: 'rgba(5, 150, 105, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Salidas',
+                            data: categoriasSalidas,
+                            backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+    };
+</script>

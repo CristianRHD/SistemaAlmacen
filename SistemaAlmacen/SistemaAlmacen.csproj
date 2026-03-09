@@ -18,4 +18,12 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\crist\Videos\Nueva carpeta\proyecto002\SistemaAlmacen-master\SistemaAlmacen\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\crist\Videos\Nueva carpeta\proyecto002\SistemaAlmacen-master\SistemaAlmacen\.editorconfig" />
+  </ItemGroup>
+
 </Project>

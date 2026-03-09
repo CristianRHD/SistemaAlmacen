@@ -29,7 +29,7 @@ var connectionString = builder.Configuration.GetConnectionString("AlmaTrackDB")
     ?? throw new InvalidOperationException("Connection string 'AlmaTrackDB' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

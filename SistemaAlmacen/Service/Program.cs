@@ -7,11 +7,14 @@ using SistemaAlmacen.Components.Account;
 using SistemaAlmacen.Data;
 using SistemaAlmacen.Services;
 
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -23,13 +26,13 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 })
-    .AddIdentityCookies();
+.AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("AlmaTrackDB")
-    ?? throw new InvalidOperationException("Connection string 'AlmaTrackDB' not found.");
+var connectionString = builder.Configuration.GetConnectionString("AlmaTrackDB_PostgreSQL")
+    ?? throw new InvalidOperationException("Connection string 'AlmaTrackDB_PostgreSQL' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -41,13 +44,13 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityEmailSender>();
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
-
 builder.Services.AddScoped<ProductoService>();
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<UsuarioService>();
 
 var app = builder.Build();
 
+// ... (Configuración de middleware igual)
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -58,6 +61,7 @@ else
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -65,6 +69,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -97,7 +102,8 @@ using (var scope = app.Services.CreateScope())
             Email = adminEmail,
             NombreCompleto = "Administrador Principal",
             EmailConfirmed = true,
-            FechaRegistro = DateTime.Now
+           
+            FechaRegistro = DateTime.UtcNow
         };
 
         var createResult = await userManager.CreateAsync(adminUser, adminPassword);
@@ -105,31 +111,18 @@ using (var scope = app.Services.CreateScope())
         if (createResult.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
-            Console.WriteLine("✅ Usuario administrador creado exitosamente:");
-            Console.WriteLine($"   Usuario: {adminUserName}");
-            Console.WriteLine($"   Email: {adminEmail}");
-            Console.WriteLine($"   Contraseña: {adminPassword}");
+            Console.WriteLine("✅ Usuario administrador creado exitosamente");
         }
         else
         {
-            Console.WriteLine("❌ Error al crear usuario administrador:");
-            foreach (var error in createResult.Errors)
-            {
-                Console.WriteLine($"   - {error.Description}");
-            }
-        }
-    }
-    else
-    {
-        if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-            Console.WriteLine("✅ Rol Admin asignado al usuario existente");
+            Console.WriteLine("❌ Error al crear administrador:");
+            foreach (var error in createResult.Errors) Console.WriteLine($" - {error.Description}");
         }
     }
 }
 
 app.Run();
+
 
 public class IdentityEmailSender : IEmailSender<ApplicationUser>
 {

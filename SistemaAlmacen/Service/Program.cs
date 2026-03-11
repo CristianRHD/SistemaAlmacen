@@ -121,10 +121,19 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-using (var scope = app.Services.CreateScope())
+ using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        context.Database.Migrate();
+        Console.WriteLine("¡Migraciones aplicadas con éxito!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al migrar: {ex.Message}");
+    }
 }
 
 app.Run();

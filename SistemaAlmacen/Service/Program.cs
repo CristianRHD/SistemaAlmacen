@@ -47,9 +47,6 @@ builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddScoped<ProductoService>();
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<UsuarioService>();
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString)
-           .UseSnakeCaseNamingConvention()); 
 
 var app = builder.Build();
 
@@ -121,21 +118,6 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine("❌ Error al crear administrador:");
             foreach (var error in createResult.Errors) Console.WriteLine($" - {error.Description}");
         }
-    }
-}
-
- using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.Migrate();
-        Console.WriteLine("¡Migraciones aplicadas con éxito!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error al migrar: {ex.Message}");
     }
 }
 

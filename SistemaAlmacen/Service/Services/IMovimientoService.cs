@@ -6,7 +6,6 @@ namespace SistemaAlmacen.Services
     {
         Task<List<Movimiento>> ObtenerTodosAsync();
 
-    
         Task<bool> RegistrarEntradaAsync(
             int productoId,
             int cantidad,
@@ -15,11 +14,19 @@ namespace SistemaAlmacen.Services
             string? observaciones,
             string usuario);
 
-        
         Task<bool> RegistrarSalidaAsync(
             int productoId,
             int cantidad,
             string destino,
+            string? observaciones,
+            string usuario);
+
+
+        Task<bool> RegistrarPerdidaAsync(
+            int productoId,
+            int cantidadLotes,
+            int unidadesPerdidas,
+            string motivoMerma,
             string? observaciones,
             string usuario);
     }

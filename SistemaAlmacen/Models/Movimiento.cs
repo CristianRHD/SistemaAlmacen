@@ -10,7 +10,6 @@ namespace SistemaAlmacen.Models
         [Required]
         public DateTime Fecha { get; set; } = DateTime.Now;
 
-     
         [Required(ErrorMessage = "El tipo es requerido")]
         [StringLength(20)]
         public string Tipo { get; set; } = "";
@@ -24,23 +23,26 @@ namespace SistemaAlmacen.Models
         [Required(ErrorMessage = "La cantidad es requerida")]
         public int Cantidad { get; set; }
 
-      
         [Column(TypeName = "decimal(18,2)")]
         public decimal? PrecioCompra { get; set; }
 
-        
         public int? ProveedorId { get; set; }
 
         [ForeignKey("ProveedorId")]
         public Proveedor? Proveedor { get; set; }
 
-        
         [StringLength(200)]
         public string? Destino { get; set; }
 
-       
         public string? Observaciones { get; set; }
 
         public string? UsuarioResponsable { get; set; }
+
+      
+        [StringLength(100)]
+        public string? MotivoMerma { get; set; }
+      
+        [Display(Name = "Unidades Perdidas")]
+        public int? UnidadesPerdidas { get; set; } 
     }
 }

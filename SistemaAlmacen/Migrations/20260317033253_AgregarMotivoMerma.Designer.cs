@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SistemaAlmacen.Data;
@@ -11,9 +12,11 @@ using SistemaAlmacen.Data;
 namespace SistemaAlmacen.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317033253_AgregarMotivoMerma")]
+    partial class AgregarMotivoMerma
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -365,9 +368,6 @@ namespace SistemaAlmacen.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("UnidadesPerdidas")
-                        .HasColumnType("integer");
-
                     b.Property<string>("UsuarioResponsable")
                         .HasColumnType("text");
 
@@ -415,9 +415,6 @@ namespace SistemaAlmacen.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.Property<int?>("ProveedorId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UnidadesPorLote")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

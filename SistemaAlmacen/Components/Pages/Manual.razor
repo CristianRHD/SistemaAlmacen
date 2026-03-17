@@ -1,0 +1,110 @@
+﻿@page "/Manual"
+
+<style>
+    .manual-container { max-width: 900px; margin: auto; font-family: 'Segoe UI', sans-serif; color: #333; }
+    .nav-menu { position: sticky; top: 0; background: white; padding: 15px; border-bottom: 2px solid #eee; z-index: 100; display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav-btn { background: #256EFF; color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 0.9em; transition: 0.3s; }
+    .nav-btn:hover { background: #1a4eb2; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .step-card { background: #f9f9f9; border-radius: 12px; padding: 25px; margin: 30px 0; border: 1px solid #e0e0e0; }
+    .step-img { width: 100%; border-radius: 8px; border: 1px solid #ddd; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .step-number { background: #256EFF; color: white; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 10px; font-weight: bold; }
+    .badge-info { background: #e7f0ff; color: #256EFF; padding: 4px 12px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+</style>
+
+<div class="manual-container">
+    <header style="text-align: center; padding: 40px 0;">
+        <h1 style="color: #1a202c; font-weight: 800;">Manual de Usuario: AlmaTrack</h1>
+        <p>Creado por: <b>Cristian Felix Reyes Hernandez</b> | <span class="badge-info">Versión 2026</span></p>
+    </header>
+
+    <nav class="nav-menu">
+        <span style="align-self: center; font-weight: bold; margin-right: 10px;">Saltar a:</span>
+        <a href="#paso1" class="nav-btn">1. Registro</a>
+        <a href="#paso2" class="nav-btn">2. Usuario</a>
+        <a href="#paso3" class="nav-btn">3. Contraseña</a>
+        <a href="#paso4" class="nav-btn">4. Inicio de Sesión</a>
+    </nav>
+
+    <div style="margin-top: 20px;">
+        <p><i>Este manual describe el proceso de autenticación en el sistema de gestión de almacén. Siga los pasos numerados para garantizar un acceso correcto.</i></p>
+    </div>
+
+    <hr />
+
+    <section id="paso1" class="step-card">
+        <h3><span class="step-number">1</span> Cómo registrarse</h3>
+        <p><b>Descripción:</b> El primer paso es acceder al formulario maestro de configuración. Aquí es donde se definen las credenciales base que permitirán el acceso administrativo o de operario al sistema <b>AlmaTrack</b>.</p>
+        <ul>
+            <li>Asegúrese de que los campos no contengan espacios innecesarios.</li>
+            <li>El nombre de usuario debe ser único en el sistema.</li>
+        </ul>
+        <img src="https://images.tango.us/workflows/23e5b163-c7e5-43fe-bec0-f78740e700ea/steps/10584d93-19bf-4bbe-8fa6-5571f5a2eca0/c7fc6bc1-dfd3-431b-a867-4f58732d8354.png?fm=png&w=1200" class="step-img" alt="Formulario de registro" />
+    </section>
+
+    <section id="paso2" class="step-card">
+        <h3><span class="step-number">2</span> Campo de Usuario</h3>
+        <p><b>Descripción:</b> Haga clic en el primer campo de texto etiquetado como "Usuario". Aquí deberá escribir el identificador que le fue asignado o el que creó en el paso anterior.</p>
+        <p><small>💡 <b>Tip:</b> El sistema diferencia entre mayúsculas y minúsculas.</small></p>
+        <img src="https://images.tango.us/workflows/23e5b163-c7e5-43fe-bec0-f78740e700ea/steps/0bfda8e8-e400-4805-8ee7-27ad8b701b1b/2621ddf7-257a-4e3a-9fb9-fea9859569b9.png?fm=png&w=1200" class="step-img" alt="Campo usuario" />
+    </section>
+
+    <section id="paso3" class="step-card">
+        <h3><span class="step-number">3</span> Campo de Contraseña</h3>
+        <p><b>Descripción:</b> Seleccione el campo de contraseña. Por seguridad, los caracteres aparecerán ocultos bajo puntos o asteriscos para evitar que personas cercanas vean su clave.</p>
+        <img src="https://images.tango.us/workflows/23e5b163-c7e5-43fe-bec0-f78740e700ea/steps/9f1f7513-d673-416a-9c3d-4ebd4942bdb9/adcc7bde-c8c1-4154-9175-85a58dcf5c63.png?fm=png&w=1200" class="step-img" alt="Campo contraseña" />
+    </section>
+
+    <section id="paso4" class="step-card">
+        <h3><span class="step-number">4</span> Finalizar Inicio de Sesión</h3>
+        <p><b>Descripción:</b> Una vez completados los datos, presione el botón azul de <b>"Iniciar Sesión"</b>. Si los datos son correctos, el sistema lo redireccionará automáticamente al tablero principal (Dashboard) del almacén.</p>
+        <div style="background: #fff3cd; border-left: 4px solid #ffecb5; padding: 10px; margin-top: 10px;">
+            <b>Nota:</b> Si el sistema muestra un error en rojo, verifique que su conexión a internet esté activa y que el servidor local esté corriendo.
+        </div>
+        <img src="https://images.tango.us/workflows/23e5b163-c7e5-43fe-bec0-f78740e700ea/steps/e4f8d66a-9252-47a6-8f82-70af869e48d8/58d539d1-bf10-4141-a73e-4b7b34f6079b.png?fm=png&w=1200" class="step-img" alt="Click iniciar sesión" />
+    </section>
+
+    <footer style="text-align: center; padding: 50px; color: #888; font-size: 0.8em;">
+        &copy; 2026 Sistema de Almacén AlmaTrack - Generado con soporte de Tango.ai
+    </footer>
+</div>
+<h1><a href="https://app.tango.us/app/workflow/df08c45b-f32c-4d26-86c2-8605f0c9c898?utm_source=magicCopy&utm_medium=magicCopy&utm_campaign=workflow%20export%20links" target='_blank'>dashboard</a></h1>
+<div><b>Creation Date:</b> Mar 16, 2026</div>
+<div><b>Created By:</b> Cristian felix Reyes hernandez</div>
+<div><a href="https://app.tango.us/app/workflow/df08c45b-f32c-4d26-86c2-8605f0c9c898?utm_source=magicCopy&utm_medium=magicCopy&utm_campaign=workflow%20export%20links" target='_blank'>View most recent version on Tango.ai</a></div>
+<div style="height: 24px">&#8203;</div>
+<hr />
+<div style="height: 24px">&#8203;</div>
+
+
+<div><h2><a href="http://localhost:5128/"># Dashboard - AlmaTrack</a></h2></div>
+
+<div><h3>1. Click on Dashboard</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/851d51dd-dd4b-4767-905f-7f009952fda1/4ba3fe62-5880-44f2-ab16-f78371990bee.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.1008&amp;fp-y=0.1746&amp;fp-z=2.0678&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=22&amp;mark-y=230&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz00NTYmaD0xMTYmZml0PWNyb3AmY29ybmVyLXJhZGl1cz0xMA%3D%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on Dashboard" />
+</div>
+
+<div><h3>2. Click on Hola, bienvenido 👋…</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/e3315e9b-c221-41e6-a7b6-538519a383bc/07c2ae88-1690-4c34-9e26-024e287ad9be.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.6016&amp;fp-y=0.2500&amp;fp-z=1.3575&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=49&amp;mark-y=158&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz0xMTAyJmg9MjI0JmZpdD1jcm9wJmNvcm5lci1yYWRpdXM9MTA%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on Hola, bienvenido 👋…" />
+</div>
+
+<div><h3>3. Click on PRODUCTOS…</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/bbdef329-251c-4abd-84eb-086ef726b658/4cda5743-af26-4352-bfac-f88f9de93a4d.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.6016&amp;fp-y=0.6383&amp;fp-z=1.3575&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=49&amp;mark-y=143&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz0xMTAyJmg9NTI1JmZpdD1jcm9wJmNvcm5lci1yYWRpdXM9MTA%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on PRODUCTOS…" />
+</div>
+
+<div><h3>4. Click on PRODUCTOS…</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/9ebc5b72-be94-4ff8-9175-b677863e5eb0/14c2a0c2-e197-476a-aed0-1d218a7e1fb8.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.4289&amp;fp-y=0.5045&amp;fp-z=1.5846&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=285&amp;mark-y=252&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz02MzAmaD0yOTImZml0PWNyb3AmY29ybmVyLXJhZGl1cz0xMA%3D%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on PRODUCTOS…" />
+</div>
+
+<div><h3>5. Click on PROVEEDORES…</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/78f4f169-f09e-4929-96c5-f52c26760895/35e7e357-275d-4994-9a61-1fe3395384dd.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.4289&amp;fp-y=0.7574&amp;fp-z=1.5846&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=285&amp;mark-y=344&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz02MzAmaD0yOTImZml0PWNyb3AmY29ybmVyLXJhZGl1cz0xMA%3D%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on PROVEEDORES…" />
+</div>
+
+<div><h3>6. Click on CATEGORÍAS</h3>
+<img src="https://images.tango.us/workflows/df08c45b-f32c-4d26-86c2-8605f0c9c898/steps/29d18508-3d1f-4d8f-a5dc-5321f4f3e25b/68d418ad-ed0f-4fee-b783-967a4ea082dd.png?fm=png&amp;crop=focalpoint&amp;fit=crop&amp;fp-x=0.7743&amp;fp-y=0.5045&amp;fp-z=1.8822&amp;w=1200&amp;border=2%2CF4F2F7&amp;border-radius=8%2C8%2C8%2C8&amp;border-radius-inner=8%2C8%2C8%2C8&amp;blend-align=bottom&amp;blend-mode=normal&amp;blend-x=0&amp;blend-w=1200&amp;blend64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL21hZGUtd2l0aC10YW5nby13YXRlcm1hcmstdjIucG5n&amp;mark-x=316&amp;mark-y=225&amp;m64=aHR0cHM6Ly9pbWFnZXMudGFuZ28udXMvc3RhdGljL2JsYW5rLnBuZz9tYXNrPWNvcm5lcnMmYm9yZGVyPTYlMkNGRjc0NDImdz03NDgmaD0zNDcmZml0PWNyb3AmY29ybmVyLXJhZGl1cz0xMA%3D%3D" style="border-radius: 8px; border: 1px solid #F4F2F7;" width="600" alt="Click on CATEGORÍAS" />
+</div>
+
+<br/>
+<hr/>
+<div>
+<span>Created with </span><a href="https://tango.ai?utm_source=magicCopy&utm_medium=magicCopy&utm_campaign=workflow%20export%20links" target='_blank' style='color: #256EFF'>Tango.ai
+    </a>
+</div>

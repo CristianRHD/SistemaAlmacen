@@ -55,6 +55,7 @@
                             <th class="tabla-th">Código</th>
                             <th class="tabla-th">Descripción / Modelo</th>
                             <th class="tabla-th">Categoría</th>
+                            <th class="tabla-th">Unidades/Lote</th>
                             <th class="tabla-th">Existencias</th>
                             <th class="tabla-th">Fecha Registro</th>
                             <th class="tabla-th">Acciones</th>
@@ -68,6 +69,9 @@
                                 <td class="tabla-td"><span class="tabla-nombre">@p.Nombre</span></td>
                                 <td class="tabla-td">
                                     <span class="badge-categoria">@(p.Categoria?.Nombre ?? "Sin categoría")</span>
+                                </td>
+                                <td class="tabla-td">
+                                    <span style="font-weight:600;color:#4a5568">@p.UnidadesPorLote</span>
                                 </td>
                                 <td class="tabla-td">
                                     <span class="badge-stock" style="@GetColorStock(p)">@p.Existencias Lotes</span>
@@ -103,6 +107,7 @@
                             <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
                                 <span class="mobile-card-code">@p.Codigo</span>
                                 <span class="badge-categoria" style="font-size:0.72rem">@(p.Categoria?.Nombre ?? "Sin cat.")</span>
+                                <span style="font-size:0.72rem;color:#4a5568;font-weight:600">📦 @p.UnidadesPorLote u/lote</span>
                             </div>
                         </div>
                         <span class="badge-stock" style="@GetColorStock(p);white-space:nowrap;font-size:0.78rem">
@@ -139,16 +144,22 @@
                 <div class="form-group">
                     <label class="form-label">Código del Producto *</label>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <input type="text" @bind="form.Codigo" @bind:event="oninput" class="form-input" placeholder="Se genera automáticamente..." style="flex:1" />
+                        <input type="text" value="@form.Codigo" @oninput="OnCodigoChanged" class="form-input" placeholder="Se genera automáticamente..." style="flex:1" />
                         <button type="button" @onclick="RegenerarCodigo" class="btn-regenerar" title="Regenerar código">🔄</button>
                     </div>
                     <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
                         💡 Se genera automáticamente, pero puedes editarlo manualmente
                     </small>
-                    @if (codigoDuplicado)
+                    @if (codigoDuplicado && !string.IsNullOrWhiteSpace(form.Codigo))
                     {
                         <div class="alerta-duplicado">
                             ⚠️ Este código ya existe. Se ha agregado un sufijo para evitar duplicados.
+                        </div>
+                    }
+                    else if (codigoDisponible && !string.IsNullOrWhiteSpace(form.Codigo))
+                    {
+                        <div class="alerta-disponible">
+                            ✅ Este código está disponible.
                         </div>
                     }
                 </div>
@@ -167,12 +178,19 @@
                             }
                         </select>
                     </div>
-                    <div class="form-checkbox" style="align-self:end;padding-bottom:12px">
-                        <label class="checkbox-label">
-                            <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
-                            <span class="checkbox-text">Habilitar para inventario</span>
-                        </label>
+                    <div class="form-group">
+                        <label class="form-label">Unidades por Lote/Caja *</label>
+                        <input type="number" @bind="form.UnidadesPorLote" min="1" class="form-input" />
+                        <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
+                            ¿Cuántas unidades vienen en cada lote/caja?
+                        </small>
                     </div>
+                </div>
+                <div class="form-checkbox" style="margin-bottom:18px">
+                    <label class="checkbox-label">
+                        <input type="checkbox" @bind="form.Activo" class="checkbox-input" />
+                        <span class="checkbox-text">Habilitar para inventario</span>
+                    </label>
                 </div>
                 <div class="nota-maestra">
                     📌 <strong>Importante:</strong> Las <strong>Existencias</strong> y <strong>Costos de Compra</strong>
@@ -231,7 +249,7 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     .tabla-wrapper { overflow-x: auto; }
-    .tabla-productos { width: 100%; border-collapse: collapse; min-width: 800px; }
+    .tabla-productos { width: 100%; border-collapse: collapse; min-width: 900px; }
     .tabla-head { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; }
     .tabla-th { padding: 14px 15px; text-align: left; font-weight: 600; }
     .tabla-fila { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
@@ -314,6 +332,13 @@
     .alerta-duplicado {
         background: #fff3cd; border-left: 4px solid #ffc107;
         color: #856404; padding: 8px 12px; border-radius: 6px;
+        font-size: 0.85rem; margin-top: 6px;
+        animation: slideIn 0.3s ease;
+    }
+
+    .alerta-disponible {
+        background: #d4edda; border-left: 4px solid #28a745;
+        color: #155724; padding: 8px 12px; border-radius: 6px;
         font-size: 0.85rem; margin-top: 6px;
         animation: slideIn 0.3s ease;
     }
@@ -424,6 +449,7 @@
     private bool guardando = false;
     private bool codigoEditadoManualmente = false;
     private bool codigoDuplicado = false;
+    private bool codigoDisponible = false;
     private DialogModal DialogRef;
 
     private List<Producto> Filtrados =>
@@ -446,12 +472,13 @@
 
     private void AbrirModalNuevo()
     {
-        form = new Producto { Activo = true, FechaCreacion = DateTime.Now };
+        form = new Producto { Activo = true, FechaCreacion = DateTime.Now, UnidadesPorLote = 1 };
         esEdicion = false; 
         error = ""; 
         mostrarModal = true;
         codigoEditadoManualmente = false;
         codigoDuplicado = false;
+        codigoDisponible = false;
     }
 
     private void Editar(Producto p)
@@ -459,13 +486,15 @@
         form = new Producto {
             Id = p.Id, Codigo = p.Codigo, Nombre = p.Nombre,
             Descripcion = p.Descripcion, CategoriaId = p.CategoriaId,
-            Activo = p.Activo, FechaCreacion = p.FechaCreacion
+            Activo = p.Activo, FechaCreacion = p.FechaCreacion,
+            UnidadesPorLote = p.UnidadesPorLote
         };
         esEdicion = true; 
         error = ""; 
         mostrarModal = true;
         codigoEditadoManualmente = true;
         codigoDuplicado = false;
+        codigoDisponible = false;
     }
 
     private void OnNombreChanged(ChangeEventArgs e)
@@ -476,16 +505,50 @@
         if (!esEdicion && !codigoEditadoManualmente)
         {
             GenerarCodigoAutomatico();
+            StateHasChanged();
+        }
+    }
+
+    private void OnCodigoChanged(ChangeEventArgs e)
+    {
+        form.Codigo = e.Value?.ToString() ?? "";
+        codigoEditadoManualmente = true;
+        VerificarDisponibilidadCodigo();
+        StateHasChanged(); // ← Forzar actualización
+    }
+
+    private void VerificarDisponibilidadCodigo()
+    {
+        // Resetear primero
+        codigoDuplicado = false;
+        codigoDisponible = false;
+
+        if (string.IsNullOrWhiteSpace(form.Codigo))
+        {
+            return;
+        }
+
+        bool existe = productos.Any(p => p.Codigo == form.Codigo && p.Id != form.Id);
+        
+        if (existe)
+        {
+            codigoDuplicado = true;
+            codigoDisponible = false;
+        }
+        else
+        {
+            codigoDuplicado = false;
+            codigoDisponible = true;
         }
     }
 
     private void GenerarCodigoAutomatico()
     {
-        codigoDuplicado = false;
-
         if (string.IsNullOrWhiteSpace(form.Nombre))
         {
             form.Codigo = "";
+            codigoDuplicado = false;
+            codigoDisponible = false;
             return;
         }
 
@@ -496,22 +559,22 @@
 
         // Tomar primeras palabras significativas (máximo 4)
         var palabras = nombre.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(p => p.Length > 2) // Ignorar palabras muy cortas
+            .Where(p => p.Length > 2)
             .Take(4)
             .ToList();
 
+        string codigoBase;
+
         if (!palabras.Any())
         {
-            // Si no hay palabras significativas, usar las primeras letras del nombre
-            var codigoFallback = new string(nombre.Where(char.IsLetterOrDigit).Take(8).ToArray());
-            form.Codigo = VerificarYAjustarCodigo(codigoFallback);
-            return;
+            codigoBase = new string(nombre.Where(char.IsLetterOrDigit).Take(8).ToArray());
         }
-
-        // Crear código base con iniciales o primeras letras
-        var codigoBase = string.Join("-", palabras.Select(p => 
-            p.Length <= 3 ? p : p.Substring(0, Math.Min(4, p.Length))
-        ));
+        else
+        {
+            codigoBase = string.Join("-", palabras.Select(p => 
+                p.Length <= 3 ? p : p.Substring(0, Math.Min(4, p.Length))
+            ));
+        }
 
         form.Codigo = VerificarYAjustarCodigo(codigoBase);
     }
@@ -520,14 +583,18 @@
     {
         var codigo = codigoBase;
         int contador = 1;
+        bool huboAjuste = false;
         
-        // Verificar si el código ya existe (excluyendo el producto actual en caso de edición)
         while (productos.Any(p => p.Codigo == codigo && p.Id != form.Id))
         {
             codigo = $"{codigoBase}-{contador:D2}";
             contador++;
-            codigoDuplicado = true;
+            huboAjuste = true;
         }
+
+        // Actualizar estados
+        codigoDuplicado = huboAjuste;
+        codigoDisponible = !huboAjuste;
 
         return codigo;
     }
@@ -535,7 +602,19 @@
     private void RegenerarCodigo()
     {
         codigoEditadoManualmente = false;
+        codigoDuplicado = false;
+        codigoDisponible = false;
+
+        if (string.IsNullOrWhiteSpace(form.Nombre))
+        {
+            form.Codigo = "";
+            StateHasChanged();
+            return;
+        }
+
         GenerarCodigoAutomatico();
+        codigoEditadoManualmente = false;
+        StateHasChanged();
     }
 
     private async Task Guardar()
@@ -543,6 +622,13 @@
         if (string.IsNullOrWhiteSpace(form.Codigo) || string.IsNullOrWhiteSpace(form.Nombre))
         { error = "Código y Nombre son requeridos"; return; }
         if (form.CategoriaId == 0) { error = "Seleccione una categoría"; return; }
+        if (form.UnidadesPorLote < 1) { error = "Las unidades por lote deben ser al menos 1"; return; }
+
+        if (productos.Any(p => p.Codigo == form.Codigo && p.Id != form.Id))
+        {
+            error = "El código ya existe. Por favor, use otro código o regenere automáticamente.";
+            return;
+        }
 
         guardando = true; error = "";
         try
@@ -586,6 +672,7 @@
         error = ""; 
         codigoEditadoManualmente = false;
         codigoDuplicado = false;
+        codigoDisponible = false;
     }
 
     private string GetColorStock(Producto p)

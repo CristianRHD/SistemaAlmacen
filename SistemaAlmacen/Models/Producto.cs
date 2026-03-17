@@ -33,5 +33,9 @@ namespace SistemaAlmacen.Models
 
         [ForeignKey("CategoriaId")]
         public Categoria Categoria { get; set; } = null!;
+     
+        [Required]
+        [Display(Name = "Unidades por Lote/Caja")]
+        public int UnidadesPorLote { get; set; } = 1; 
     }
 }

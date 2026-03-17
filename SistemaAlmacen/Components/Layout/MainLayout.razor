@@ -68,13 +68,14 @@
                                     </svg>
                                 </span>
                                 Dashboard
+
                             </NavLink>
                         </div>
 
                         @if (CanViewInventory(context))
                         {
                             <div class="nav-group">
-                                <span class="group-label">INVENTARIO</span>
+                                <span class="group-label">Catalogos y Proveedores</span>
                                 <NavLink class="nav-item" href="/productos" onclick="document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show');">
                                     <span class="icon">📦</span> Productos
                                 </NavLink>
@@ -91,7 +92,7 @@
                         }
 
                         <div class="nav-group">
-                            <span class="group-label">GESTIÓN</span>
+                            <span class="group-label">GESTIÓN Y Inventario</span>
                             <details class="movimientos-menu">
                                 <summary class="nav-item" style="cursor: pointer; list-style: none; display: flex; justify-content: space-between;">
                                     <div style="display: flex; align-items: center;">
@@ -105,6 +106,9 @@
                                     </NavLink>
                                     <NavLink class="nav-item" href="/salida" style="font-size: 0.9rem; margin-bottom: 2px;">
                                         <span class="icon" style="font-size: 1rem;">📤</span> Salidas/Conduce
+                                    </NavLink>
+                                    <NavLink class="nav-item" href="/perdidas" style="font-size: 0.9rem; margin-bottom: 2px;">
+                                        <span class="icon" style="font-size: 1rem;">📤</span> Perdidas
                                     </NavLink>
                                 </div>
                             </details>

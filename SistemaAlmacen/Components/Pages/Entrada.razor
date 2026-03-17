@@ -59,8 +59,10 @@
                                 <th>Fecha</th>
                                 <th>Producto / Código</th>
                                 <th>Proveedor / RNC</th>
-                                <th>Cant.</th>
-                                <th>Costo Por Lotes</th>
+                                <th>Lotes</th>
+                                <th>Unidades/Lote</th>
+                                <th>Total Unidades</th>
+                                <th>Costo Por Lote</th>
                                 <th>Responsable</th>
                                 <th>Acciones</th>
                             </tr>
@@ -68,11 +70,16 @@
                         <tbody>
                             @foreach (var mov in MovimientosFiltrados)
                             {
+                                var unidadesPorLote = mov.Producto?.UnidadesPorLote ?? 1;
+                                var totalUnidades = mov.Cantidad * unidadesPorLote;
+                                
                                 <tr class="tabla-fila">
                                     <td class="tabla-td">@mov.Fecha.ToString("dd/MM/yyyy")</td>
                                     <td class="tabla-td"><strong>@mov.Producto?.Nombre</strong><br/><small>@mov.Producto?.Codigo</small></td>
                                     <td class="tabla-td">@(mov.Proveedor?.Nombre ?? "N/A")<br/><small>@mov.Proveedor?.RNC</small></td>
                                     <td class="tabla-td"><span class="cantidad-badge">+@mov.Cantidad</span></td>
+                                    <td class="tabla-td"><span style="font-weight:600;color:#4a5568">@unidadesPorLote</span></td>
+                                    <td class="tabla-td"><strong style="color:#059669">@totalUnidades</strong></td>
                                     <td class="tabla-td">RD$ @(mov.PrecioCompra?.ToString("N2") ?? "0.00")</td>
                                     <td class="tabla-td"><span class="user-badge">👤 @mov.UsuarioResponsable</span></td>
                                     <td class="tabla-td">
@@ -122,7 +129,8 @@
                             @foreach (var p in filteredProductos)
                             {
                                 <li @onclick="() => SeleccionarProducto(p)">
-                                    <strong>@p.Codigo</strong> - @p.Nombre (Disp: @p.Existencias)
+                                    <strong>@p.Codigo</strong> - @p.Nombre<br/>
+                                    <small>Stock: @p.Existencias lotes (@p.UnidadesPorLote u/lote)</small>
                                 </li>
                             }
                         </ul>
@@ -132,6 +140,15 @@
                         <div class="selected-badge">✅ @productoNombreSeleccionado <span class="btn-remove" @onclick="ResetProducto">✕</span></div>
                     }
                 </div>
+
+                @* INFO DEL PRODUCTO *@
+                @if (productoSeleccionado != null)
+                {
+                    <div class="info-producto">
+                        <p>📦 <strong>Unidades por lote (configurado):</strong> @productoSeleccionado.UnidadesPorLote</p>
+                        <p>📊 <strong>Stock actual:</strong> @productoSeleccionado.Existencias lotes = @(productoSeleccionado.Existencias * productoSeleccionado.UnidadesPorLote) unidades</p>
+                    </div>
+                }
 
                 @* BÚSQUEDA PROVEEDOR *@
                 <div class="form-group search-group">
@@ -156,29 +173,85 @@
                     }
                 </div>
 
+                @* CANTIDAD Y COSTO *@
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Cantidad *</label>
-                        <input type="number" @bind="cantidad" min="1" class="form-input" @oninput="ValidarAlertaManual" />
+                        <label class="form-label">Cantidad de Lotes *</label>
+                        <input type="number" @bind="cantidadLotes" min="1" class="form-input" @oninput="ActualizarCalculos" />
+                        <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
+                            ¿Cuántos lotes recibiste?
+                        </small>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Costo RD$ *</label>
-                        <input type="number" @bind="precioCompra" step="0.01" class="form-input" />
+                        <label class="form-label">Unidades por Lote *</label>
+                        <input type="number" @bind="unidadesPorLoteReal" min="1" class="form-input" @oninput="ActualizarCalculos" />
+                        <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
+                            ¿Cuántas unidades en cada lote?
+                        </small>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Costo por Lote RD$ *</label>
+                    <input type="number" @bind="precioCompra" step="0.01" min="0" class="form-input" />
+                    <small style="color:#64748b;font-size:0.8rem;margin-top:4px;display:block">
+                        Precio de cada lote completo
+                    </small>
+                </div>
+
+                @* RESUMEN MEJORADO *@
+                @if (productoSeleccionado != null && cantidadLotes > 0 && unidadesPorLoteReal > 0)
+                {
+                    var totalUnidades = cantidadLotes * unidadesPorLoteReal;
+                    var costoTotal = cantidadLotes * precioCompra;
+
+                    <div class="resumen-entrada-detallado">
+                        <h4 style="margin:0 0 12px 0;color:#1e40af;font-size:1rem">📊 RESUMEN DE ENTRADA</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div style="background:white;padding:12px;border-radius:8px;text-align:center">
+                                <small style="color:#64748b;display:block;margin-bottom:5px">Lotes recibidos</small>
+                                <strong style="font-size:1.4rem;color:#1e40af">@cantidadLotes</strong>
+                            </div>
+                            <div style="background:white;padding:12px;border-radius:8px;text-align:center">
+                                <small style="color:#64748b;display:block;margin-bottom:5px">Unidades/Lote</small>
+                                <strong style="font-size:1.4rem;color:#1e40af">@unidadesPorLoteReal</strong>
+                            </div>
+                            <div style="background:#059669;padding:15px;border-radius:8px;text-align:center;grid-column:1/-1">
+                                <small style="color:#d1fae5;display:block;font-weight:600;margin-bottom:5px">TOTAL UNIDADES</small>
+                                <strong style="font-size:2rem;color:white">@totalUnidades</strong>
+                            </div>
+                            <div style="background:#1414b8;padding:15px;border-radius:8px;text-align:center;grid-column:1/-1">
+                                <small style="color:#dbeafe;display:block;font-weight:600;margin-bottom:5px">COSTO TOTAL</small>
+                                <strong style="font-size:2rem;color:white">RD$ @costoTotal.ToString("N2")</strong>
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;text-align:center;background:white;padding:10px;border-radius:8px">
+                            <small style="color:#475569">@cantidadLotes lotes × @unidadesPorLoteReal unidades = <strong style="color:#059669">@totalUnidades unidades totales</strong></small>
+                        </div>
+                    </div>
+                }
+
+                @* ALERTA SI DIFIERE DEL CONFIGURADO *@
+                @if (productoSeleccionado != null && unidadesPorLoteReal != productoSeleccionado.UnidadesPorLote && unidadesPorLoteReal > 0)
+                {
+                    <div class="alerta-diferencia">
+                        ℹ️ <strong>Nota:</strong> Este lote tiene @unidadesPorLoteReal unidades (diferente al estándar configurado: @productoSeleccionado.UnidadesPorLote).
+                        Esto es normal para pedidos especiales o promociones.
+                    </div>
+                }
 
                 @* UMBRAL VISUAL (solo en nuevo) *@
                 @if (!esEdicion)
                 {
                     <div class="form-group">
                         <label class="form-label" style="color: #1414b8;">🔔 Notificarme si después de esto quedan menos de:</label>
-                        <input type="number" @bind="umbralAvisoManual" class="form-input border-blue" placeholder="Ej: 5" @oninput="ValidarAlertaManual" />
+                        <input type="number" @bind="umbralAvisoManual" min="0" class="form-input border-blue" placeholder="Ej: 5 lotes" @oninput="ValidarAlertaManual" />
                     </div>
 
                     @if (mostrarAlertaVisual)
                     {
                         <div class="alert-warning-manual">
-                            ⚠️ <strong>Atención:</strong> Según tu umbral (@umbralAvisoManual), este producto quedará en estado crítico (@(existenciasActuales + cantidad) unidades).
+                            ⚠️ <strong>Atención:</strong> Según tu umbral (@umbralAvisoManual lotes), este producto quedará en estado crítico (@(existenciasActuales + cantidadLotes) lotes).
                         </div>
                     }
                 }
@@ -297,10 +370,12 @@
     }
 
     .tabla-container { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; }
-    .tabla-entradas { width: 100%; border-collapse: collapse; }
+    .tabla-wrapper { overflow-x: auto; }
+    .tabla-entradas { width: 100%; border-collapse: collapse; min-width: 1000px; }
     .tabla-head { background: #f8fafc; text-align: left; }
-    .tabla-head th { padding: 15px; border-bottom: 2px solid #e2e8f0; font-size: 0.85rem; color: #475569; }
+    .tabla-head th { padding: 15px; border-bottom: 2px solid #e2e8f0; font-size: 0.85rem; color: #475569; white-space: nowrap; }
     .tabla-td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    .cantidad-badge { background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
 
     .acciones-container { display: flex; gap: 8px; }
     .btn-accion { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 1rem; transition: all 0.2s; }
@@ -308,12 +383,33 @@
     .btn-eliminar { background: #f44336; }
 
     .search-group { position: relative; }
-    .search-results { position: absolute; background: white; border: 1px solid #ddd; width: 100%; z-index: 100; list-style: none; padding: 0; margin: 0; border-radius: 8px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    .search-results { position: absolute; background: white; border: 1px solid #ddd; width: 100%; z-index: 100; list-style: none; padding: 0; margin: 0; border-radius: 8px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto; }
     .search-results li { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
     .search-results li:hover { background: #f1f5f9; }
 
     .selected-badge { background: #eef2ff; color: #1414b8; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; margin-top: 8px; font-weight: bold; border: 1px solid #c3dafe; }
     .btn-remove { color: #ef4444; cursor: pointer; padding: 0 5px; }
+
+    .info-producto { background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #10b981; }
+    .info-producto p { margin: 5px 0; color: #065f46; font-size: 0.9rem; }
+
+    .resumen-entrada-detallado {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 2px solid #3b82f6;
+    }
+
+    .alerta-diferencia {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        color: #1e40af;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin: 15px 0;
+    }
 
     .alert-warning-manual { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; animation: pulse 2s infinite; }
     .border-blue { border: 2px solid #1414b8 !important; }
@@ -322,7 +418,7 @@
     .error-mensaje { background: #fef2f2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-contenido { background: white; width: 95%; max-width: 600px; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .modal-contenido { background: white; width: 95%; max-width: 650px; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
     .modal-header { padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 20px; }
     .form-group { margin-bottom: 15px; }
@@ -344,10 +440,15 @@
     private List<Proveedor> proveedores = new();
     private List<Proveedor> filteredProveedores = new();
     private List<Movimiento> historial = new();
+    private Producto? productoSeleccionado;
 
     private string searchProducto = "", searchProveedor = "", productoNombreSeleccionado = "", proveedorNombreSeleccionado = "", error = "";
     private bool mostrarResultadosProducto, mostrarResultadosProveedor, mostrarAlertaVisual;
-    private int productoId, proveedorId, cantidad = 1, existenciasActuales, umbralAvisoManual = 3;
+    private int productoId, proveedorId, existenciasActuales, umbralAvisoManual = 3;
+    
+    private int cantidadLotes = 1; // Cuántos lotes se reciben
+    private int unidadesPorLoteReal = 1; // Cuántas unidades vienen en ESTE lote específico
+    
     private decimal precioCompra;
     private bool cargando = true, mostrarModal, guardando, esEdicion;
     private int? movimientoEditandoId;
@@ -417,10 +518,13 @@
     private void SeleccionarProducto(Producto p)
     {
         productoId = p.Id;
+        productoSeleccionado = p;
         productoNombreSeleccionado = $"{p.Nombre} ({p.Codigo})";
         existenciasActuales = p.Existencias;
+        unidadesPorLoteReal = p.UnidadesPorLote; // Auto-completar con el valor configurado
         mostrarResultadosProducto = false;
         ValidarAlertaManual(null);
+        StateHasChanged();
     }
 
     private void SeleccionarProveedor(Proveedor prov)
@@ -430,8 +534,14 @@
         mostrarResultadosProveedor = false;
     }
 
+    private void ActualizarCalculos(ChangeEventArgs? e)
+    {
+        ValidarAlertaManual(e);
+        StateHasChanged();
+    }
+
     private void ValidarAlertaManual(ChangeEventArgs? e)
-        => mostrarAlertaVisual = (existenciasActuales + cantidad) <= umbralAvisoManual;
+        => mostrarAlertaVisual = (existenciasActuales + cantidadLotes) <= umbralAvisoManual;
 
     // ── Modales ────────────────────────────────────────────────────────────────
     private void AbrirModalNuevo()
@@ -449,8 +559,10 @@
         cantidadOriginal = mov.Cantidad;
 
         productoId = mov.ProductoId;
+        productoSeleccionado = mov.Producto;
         productoNombreSeleccionado = $"{mov.Producto?.Nombre} ({mov.Producto?.Codigo})";
         existenciasActuales = mov.Producto?.Existencias ?? 0;
+        unidadesPorLoteReal = mov.Producto?.UnidadesPorLote ?? 1;
 
         if (mov.ProveedorId.HasValue)
         {
@@ -458,20 +570,31 @@
             proveedorNombreSeleccionado = mov.Proveedor?.Nombre ?? "";
         }
 
-        cantidad = mov.Cantidad;
+        cantidadLotes = mov.Cantidad;
         precioCompra = mov.PrecioCompra ?? 0;
         mostrarModal = true;
     }
 
     private void CerrarModal() => mostrarModal = false;
-    private void ResetProducto() { productoId = 0; searchProducto = ""; existenciasActuales = 0; }
+    
+    private void ResetProducto() 
+    { 
+        productoId = 0; 
+        productoSeleccionado = null;
+        searchProducto = ""; 
+        existenciasActuales = 0;
+        unidadesPorLoteReal = 1;
+    }
+    
     private void ResetProveedor() { proveedorId = 0; searchProveedor = ""; }
 
     private void Limpiar()
     {
-        productoId = 0; proveedorId = 0; cantidad = 1; precioCompra = 0;
+        productoId = 0; proveedorId = 0; cantidadLotes = 1; precioCompra = 0;
         searchProducto = ""; searchProveedor = "";
         productoNombreSeleccionado = ""; proveedorNombreSeleccionado = "";
+        productoSeleccionado = null;
+        unidadesPorLoteReal = 1;
         error = ""; mostrarAlertaVisual = false;
         movimientoEditandoId = null; cantidadOriginal = 0;
     }
@@ -480,7 +603,8 @@
     private async Task Guardar()
     {
         if (productoId == 0 || proveedorId == 0) { error = "Complete los campos obligatorios."; return; }
-        if (cantidad <= 0) { error = "La cantidad debe ser mayor a cero."; return; }
+        if (cantidadLotes <= 0) { error = "La cantidad debe ser mayor a cero."; return; }
+        if (unidadesPorLoteReal <= 0) { error = "Las unidades por lote deben ser mayor a cero."; return; }
 
         guardando = true;
         error = "";
@@ -505,12 +629,15 @@
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var user = authState.User.Identity?.Name ?? "Admin";
 
-        bool res = await MovimientoService.RegistrarEntradaAsync(productoId, cantidad, precioCompra, proveedorId, "Entrada de Inventario", user);
+        var totalUnidades = cantidadLotes * unidadesPorLoteReal;
+        var observaciones = $"Entrada: {cantidadLotes} lotes × {unidadesPorLoteReal} u/lote = {totalUnidades} unidades";
+
+        bool res = await MovimientoService.RegistrarEntradaAsync(productoId, cantidadLotes, precioCompra, proveedorId, observaciones, user);
         if (res)
         {
             await Cargar();
             CerrarModal();
-            await DialogRef.ShowSuccessAsync("Éxito", "Existencias actualizadas correctamente.");
+            await DialogRef.ShowSuccessAsync("Éxito", $"Se registraron {totalUnidades} unidades ({cantidadLotes} lotes)");
         }
     }
 
@@ -522,14 +649,16 @@
 
         if (mov == null) { error = "Movimiento no encontrado."; return; }
 
-        int diferencia = cantidad - cantidadOriginal;
+        int diferencia = cantidadLotes - cantidadOriginal;
         if (mov.Producto != null)
             mov.Producto.Existencias += diferencia;
 
+        var totalUnidades = cantidadLotes * unidadesPorLoteReal;
         mov.ProductoId  = productoId;
         mov.ProveedorId = proveedorId;
-        mov.Cantidad    = cantidad;
+        mov.Cantidad    = cantidadLotes;
         mov.PrecioCompra = precioCompra;
+        mov.Observaciones = $"Entrada: {cantidadLotes} lotes × {unidadesPorLoteReal} u/lote = {totalUnidades} unidades";
 
         await Context.SaveChangesAsync();
         await Cargar();
@@ -540,7 +669,7 @@
     // ── Eliminar ───────────────────────────────────────────────────────────────
     private async Task Eliminar(Movimiento mov)
     {
-        if (await DialogRef.ShowConfirmAsync("Anular", "¿Restaurar stock anterior?", "Anular", "🗑️"))
+        if (await DialogRef.ShowConfirmAsync("Anular", "¿Restaurar cantidad anterior?", "Anular", "🗑️"))
         {
             var m = await Context.Movimientos
                 .Include(x => x.Producto)

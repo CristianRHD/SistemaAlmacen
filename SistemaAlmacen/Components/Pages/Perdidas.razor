@@ -1,0 +1,417 @@
+﻿@page "/perdidas"
+@attribute [Authorize(Roles = "Admin,Gerente")]
+@rendermode InteractiveServer
+@using SistemaAlmacen.Models
+@using SistemaAlmacen.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IMovimientoService MovimientoService
+@inject ProductoService ProductoService
+@inject AuthenticationStateProvider AuthProvider
+
+<DialogModal @ref="DialogRef" />
+
+<PageTitle>Pérdidas y Mermas - AlmaTrack</PageTitle>
+
+<div class="perdidas-container">
+
+    <div class="perdidas-header-superior">
+        <h1 class="perdidas-titulo">⚠️ Pérdidas y Mermas</h1>
+        <button @onclick="AbrirModal" class="btn-nuevo">
+            ➕ Registrar Pérdida
+        </button>
+    </div>
+
+    <div class="barra-herramientas-tabla">
+        <div class="buscador-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" 
+                   class="input-busqueda" 
+                   placeholder="Buscar por producto, motivo o responsable..." 
+                   @bind="textoBusqueda" 
+                   @bind:event="oninput" />
+        </div>
+        <div class="conteo-resultados">
+            Resultados: <b>@PerdidasFiltradas.Count()</b>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="estado-container">
+            <p>⏳ Cargando registros...</p>
+        </div>
+    }
+    else
+    {
+        <div class="tabla-container">
+            <table class="tabla-perdidas">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Lotes</th>
+                        <th>Unidades Sueltas</th>
+                        <th>Total Unidades</th>
+                        <th>Motivo</th>
+                        <th>Valor (RD$)</th>
+                        <th>Responsable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in PerdidasFiltradas)
+                    {
+                        var unidadesPorLote = p.Producto?.UnidadesPorLote ?? 1;
+                        var lotesPerdidos = p.Cantidad;
+                        var unidadesSueltas = p.UnidadesPerdidas ?? 0;
+                        var totalUnidades = (lotesPerdidos * unidadesPorLote) + unidadesSueltas;
+                        
+                        <tr>
+                            <td>@p.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td class="texto-enfasis">@(p.Producto?.Nombre ?? "N/A")</td>
+                            <td><span class="badge-lotes">@lotesPerdidos</span></td>
+                            <td><span class="badge-unidades">@unidadesSueltas</span></td>
+                            <td><strong style="color:#dc2626">@totalUnidades</strong></td>
+                            <td><span class="tag-motivo">@p.MotivoMerma</span></td>
+                            <td class="texto-valor">RD$ @(((p.PrecioCompra ?? 0) / unidadesPorLote) * totalUnidades).ToString("N2")</td>
+                            <td class="texto-secundario">👤 @p.UsuarioResponsable</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!PerdidasFiltradas.Any())
+            {
+                <div class="vacio-mensaje">
+                    No se encontraron registros que coincidan con la búsqueda.
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (mostrarModal)
+{
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-contenido" @onclick:stopPropagation>
+            <h3 style="color: #b91c1c; margin-bottom: 20px;">⚠️ Registrar Nueva Pérdida</h3>
+            
+            <div class="form-group">
+                <label class="label">Producto *</label>
+                <select class="input" @bind="form.ProductoId" @bind:after="ActualizarInfoProducto">
+                    <option value="0">Seleccione un producto...</option>
+                    @foreach (var prod in productos)
+                    {
+                        <option value="@prod.Id">@prod.Nombre (Stock: @prod.Existencias lotes)</option>
+                    }
+                </select>
+            </div>
+
+            @if (productoSeleccionado != null)
+            {
+                <div class="info-producto">
+                    <p>📦 <strong>Unidades por lote:</strong> @productoSeleccionado.UnidadesPorLote</p>
+                    <p>📊 <strong>Stock disponible:</strong> @productoSeleccionado.Existencias lotes = @(productoSeleccionado.Existencias * productoSeleccionado.UnidadesPorLote) unidades</p>
+                </div>
+            }
+
+            <div class="form-group">
+                <label class="label">Tipo de Pérdida *</label>
+                <select class="input" @bind="tipoPerdida" @bind:after="CambiarTipoPerdida">
+                    <option value="lotes">Lotes completos</option>
+                    <option value="unidades">Unidades sueltas</option>
+                </select>
+            </div>
+
+            @if (tipoPerdida == "lotes")
+            {
+                <div class="form-group">
+                    <label class="label">Lotes Perdidos *</label>
+                    <input type="number" class="input" @bind="form.CantidadLotes" min="0" @oninput="CalcularResumen" />
+                    <small style="color:#64748b;margin-top:5px">¿Cuántos lotes completos se perdieron?</small>
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    <label class="label">Unidades Perdidas *</label>
+                    <input type="number" class="input" @bind="form.UnidadesPerdidas" min="0" @oninput="CalcularResumen" />
+                    <small style="color:#64748b;margin-top:5px">¿Cuántas unidades sueltas se perdieron?</small>
+                </div>
+            }
+
+            @if (productoSeleccionado != null && TotalUnidadesPerdidas > 0)
+            {
+                <div class="resumen-perdida">
+                    @if (tipoPerdida == "lotes")
+                    {
+                        <strong>⚠️ Total: @form.CantidadLotes lotes × @productoSeleccionado.UnidadesPorLote u/lote = @TotalUnidadesPerdidas unidades</strong>
+                    }
+                    else
+                    {
+                        <strong>⚠️ Total a registrar: @form.UnidadesPerdidas unidades</strong>
+                    }
+                    <p style="margin-top:8px;color:#64748b;font-size:0.9rem">
+                        Valor estimado: RD$ @(((productoSeleccionado.Existencias > 0 ? ObtenerPrecioPorUnidad() : 0) * TotalUnidadesPerdidas).ToString("N2"))
+                    </p>
+                </div>
+            }
+
+            <div class="form-group">
+                <label class="label">Motivo *</label>
+                <select class="input" @bind="form.MotivoMerma">
+                    <option value="">Seleccione motivo...</option>
+                    <option value="Producto Dañado">Producto Dañado</option>
+                    <option value="Producto Vencido">Producto Vencido</option>
+                    <option value="Robo">Robo</option>
+                    <option value="Extravío">Extravío</option>
+                    <option value="Defecto de Fábrica">Defecto de Fábrica</option>
+                    <option value="Daño en Transporte">Daño en Transporte</option>
+                    <option value="Error de Inventario">Error de Inventario</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="label">Observaciones</label>
+                <textarea class="input" rows="3" @bind="form.Observaciones" placeholder="Detalles adicionales..."></textarea>
+            </div>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="error-box">@error</div>
+            }
+
+            <div class="modal-botones">
+                <button class="btn-cancelar" @onclick="CerrarModal">Cancelar</button>
+                <button class="btn-guardar" @onclick="Guardar">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Movimiento> perdidas = new();
+    private List<Producto> productos = new();
+    private Producto? productoSeleccionado;
+    private PerdidaForm form = new();
+    private string textoBusqueda = "";
+    private string error = "";
+    private bool cargando = true;
+    private bool mostrarModal = false;
+    private DialogModal DialogRef = null!;
+    private string usuarioActual = "";
+    private string tipoPerdida = "unidades"; // Por defecto: unidades sueltas
+
+    private int TotalUnidadesPerdidas
+    {
+        get
+        {
+            if (productoSeleccionado == null) return 0;
+            
+            return tipoPerdida == "lotes" 
+                ? form.CantidadLotes * productoSeleccionado.UnidadesPorLote 
+                : form.UnidadesPerdidas;
+        }
+    }
+
+    private IEnumerable<Movimiento> PerdidasFiltradas => 
+        string.IsNullOrWhiteSpace(textoBusqueda) 
+        ? perdidas 
+        : perdidas.Where(p => 
+            (p.Producto?.Nombre?.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.MotivoMerma?.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.UsuarioResponsable?.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ?? false)
+        );
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        usuarioActual = authState.User.Identity?.Name ?? "Sistema";
+        await Cargar();
+    }
+
+    private async Task Cargar()
+    {
+        cargando = true;
+        var todos = await MovimientoService.ObtenerTodosAsync();
+        perdidas = todos.Where(m => m.Tipo == "Pérdida").OrderByDescending(m => m.Fecha).ToList();
+        productos = (await ProductoService.ObtenerTodosAsync()).Where(p => p.Activo && p.Existencias > 0).ToList();
+        cargando = false;
+    }
+
+    private void AbrirModal() 
+    { 
+        form = new(); 
+        productoSeleccionado = null;
+        tipoPerdida = "unidades";
+        error = ""; 
+        mostrarModal = true; 
+    }
+
+    private void ActualizarInfoProducto()
+    {
+        productoSeleccionado = productos.FirstOrDefault(p => p.Id == form.ProductoId);
+        StateHasChanged();
+    }
+
+    private void CambiarTipoPerdida()
+    {
+        form.CantidadLotes = 0;
+        form.UnidadesPerdidas = 0;
+        StateHasChanged();
+    }
+
+    private void CalcularResumen(ChangeEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    private decimal ObtenerPrecioPorUnidad()
+    {
+        // Esto es una estimación. En un sistema real, buscarías el precio de la última entrada
+        return 100; // Puedes mejorarlo obteniendo el precio real del producto
+    }
+
+    private async Task Guardar()
+    {
+        if (form.ProductoId == 0 || string.IsNullOrWhiteSpace(form.MotivoMerma))
+        {
+            error = "⚠️ Complete todos los campos obligatorios";
+            return;
+        }
+
+        if (form.CantidadLotes == 0 && form.UnidadesPerdidas == 0)
+        {
+            error = "⚠️ Debe indicar al menos 1 lote o 1 unidad perdida";
+            return;
+        }
+
+        bool resultado = await MovimientoService.RegistrarPerdidaAsync(
+            form.ProductoId, 
+            form.CantidadLotes, 
+            form.UnidadesPerdidas,
+            form.MotivoMerma, 
+            form.Observaciones, 
+            usuarioActual
+        );
+
+        if (resultado) 
+        { 
+            await Cargar(); 
+            CerrarModal(); 
+            await DialogRef.ShowSuccessAsync("Éxito", $"Se registró pérdida de {TotalUnidadesPerdidas} unidades"); 
+        }
+        else 
+        { 
+            error = "❌ Error: Verifique stock disponible."; 
+        }
+    }
+
+    private void CerrarModal() 
+    { 
+        mostrarModal = false; 
+        form = new();
+        productoSeleccionado = null;
+    }
+
+    private class PerdidaForm 
+    {
+        public int ProductoId { get; set; }
+        public int CantidadLotes { get; set; }
+        public int UnidadesPerdidas { get; set; }
+        public string MotivoMerma { get; set; } = "";
+        public string? Observaciones { get; set; }
+    }
+}
+
+<style>
+    /* Contenedor General */
+    .perdidas-container { padding: 30px; background: #f8fafc; min-height: 100vh; color: #1e293b; }
+
+    /* Header Superior */
+    .perdidas-header-superior { 
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; 
+    }
+    .perdidas-titulo { font-size: 28px; font-weight: 800; color: #0f172a; margin: 0; }
+    .btn-nuevo { 
+        background: #ef4444; color: white !important; border: none; padding: 12px 24px; 
+        border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+    }
+    .btn-nuevo:hover { background: #dc2626; transform: translateY(-2px); }
+
+    /* Barra de Búsqueda sobre tabla */
+    .barra-herramientas-tabla { 
+        background: white; padding: 15px 20px; border: 1px solid #e2e8f0; 
+        border-bottom: none; border-radius: 12px 12px 0 0; display: flex; 
+        justify-content: space-between; align-items: center; 
+    }
+    .buscador-wrapper { position: relative; width: 100%; max-width: 400px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+    .input-busqueda { 
+        width: 100%; padding: 10px 10px 10px 40px; border-radius: 8px; 
+        border: 1px solid #cbd5e1; background: #fff; color: #0f172a !important; 
+    }
+    .conteo-resultados { font-size: 13px; color: #64748b; }
+
+    /* Tabla */
+    .tabla-container { 
+        background: white; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; 
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; 
+    }
+    .tabla-perdidas { width: 100%; border-collapse: collapse; }
+    .tabla-perdidas th { 
+        background: #f1f5f9; color: #475569; padding: 15px; text-align: left; 
+        font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;
+    }
+    .tabla-perdidas td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #1e293b !important; }
+
+    /* Estilos de contenido */
+    .texto-enfasis { font-weight: 600; color: #0f172a; }
+    .texto-valor { font-weight: 700; color: #16a34a; }
+    .badge-lotes { background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .badge-unidades { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .tag-motivo { background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #e5e7eb; }
+    .vacio-mensaje { padding: 30px; text-align: center; color: #94a3b8; }
+
+    /* Info Producto */
+    .info-producto { 
+        background: #f0fdf4; 
+        padding: 15px; 
+        border-radius: 8px; 
+        margin: 15px 0; 
+        border-left: 4px solid #10b981; 
+    }
+    .info-producto p { 
+        margin: 5px 0; 
+        color: #065f46; 
+        font-size: 0.9rem; 
+    }
+
+    /* Resumen Pérdida */
+    .resumen-perdida {
+        background: #fef2f2;
+        border-left: 4px solid #dc2626;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        text-align: center;
+    }
+    .resumen-perdida strong {
+        color: #991b1b;
+        font-size: 1rem;
+        display: block;
+    }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-contenido { background: white; padding: 30px; border-radius: 15px; width: 500px; max-height: 90vh; overflow-y: auto; }
+    .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+    .label { font-weight: 600; margin-bottom: 5px; color: #4b5563; }
+    .input { padding: 10px; border-radius: 8px; border: 1px solid #d1d5db; color: #1a202c; }
+    .modal-botones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-cancelar { background: #e2e8f0; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-guardar { background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    .error-box { background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; }
+</style>
